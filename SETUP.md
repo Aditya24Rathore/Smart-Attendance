@@ -79,18 +79,11 @@ sudo systemctl start mongod
 
 ### Step 5: Initialize Database (Seed Admin User)
 ```bash
-node scripts/seedAdmin.js
-```
-
-**Before running the seed script**, set a secure admin password in `backend/.env`:
-```env
 ADMIN_EMAIL=admin@smartattendance.com
 ADMIN_PASSWORD=<your_secure_password>
-```
 
-Run:
-```bash
-npm run seed
+# Then run seed script
+node scripts/seedAdmin.js
 ```
 
 Output:
@@ -186,8 +179,8 @@ curl http://localhost:5000/api/health
 - You should see the Smart Attendance login page
 
 ### 3. Test Admin Login
-- Click "Admin Login"
-- Email: `admin@smartattendance.com`
+- Open login page at `http://localhost:3000/login`
+- Username: `admin`
 - Password: (use the password you set in `ADMIN_PASSWORD` in your `.env` file)
 
 ## Troubleshooting
@@ -262,23 +255,17 @@ npm start
 ## Testing Common Features
 
 ### 1. Student Registration
-- Go to Login page
-- Click "Student Registration"
-- Enter:
-  - Enrollment Number: E001
-  - Mobile Number: 9876543210
-  - Click "Send OTP"
-- Use any 6-digit number as OTP (not validated in dev)
+- Open `http://localhost:3000/register`
+- Fill the registration form with student details
+- Create username/password and submit
 
 ### 2. Teacher Login
-- Click "Teacher Login"
-- Teacher ID: T001
-- Mobile Number: 9876543211
-- Click "Send OTP"
+- Open `http://localhost:3000/login`
+- Use teacher credentials (teacher account must exist in database)
 
 ### 3. Admin Dashboard
-- Click "Admin Login"
-- Use seeded admin credentials
+- Open `http://localhost:3000/login`
+- Login with `admin` username and seeded password
 - Access analytics and reports
 
 ## Next Steps
@@ -292,7 +279,7 @@ npm start
    - Test email sending
 
 3. **Update Security**
-   - Change admin default password
+   - Set strong `ADMIN_PASSWORD` in `.env`
    - Generate strong JWT_SECRET and QR_ENCRYPTION_KEY
    - Update CORS_ORIGIN for production
 

@@ -10,7 +10,6 @@ This system implements an automated attendance marking system with:
 - **Real-time QR Scanning** - Students scan QR codes to mark attendance
 - **Role-Based Access** - Student, Teacher, Admin/HOD roles with different permissions
 - **Analytics & Reports** - Attendance tracking and trend analysis
-- **Offline Support** - Attendance cached locally with auto-sync
 - **MongoDB Database** - Scalable document-oriented database
 
 ## Technology Stack
@@ -88,17 +87,14 @@ Smart Attendance/
 - 📋 Generate dynamic QR codes (30-second refresh)
 - 👥 View attendance records
 - 📊 Class attendance analysis
-- 📝 Manage attendance manually if needed
 - 🔐 Teacher device acts as scanner only
 
 ### Admin/HOD Features
 - 👨‍💼 Manage users (students, teachers)
 - ✅ Verify teacher accounts
 - 📊 Generate attendance reports
-- 📥 Download reports (CSV/PDF)
 - 🔍 Filter attendance by department/semester
 - ✏️ Bulk edit attendance records
-- 📈 Identify disengaged students
 
 ## Setup Instructions
 
@@ -162,6 +158,10 @@ The frontend will be available at `http://localhost:3000`
 - `POST /teacher/send-otp` - Send OTP to teacher
 - `POST /teacher/verify-otp` - Verify OTP and login
 - `POST /admin/login` - Admin login with credentials
+- `POST /login` - Username/password login (frontend compatibility)
+- `POST /register` - Student registration (frontend compatibility)
+- `GET /me` - Get current authenticated user
+- `POST /logout` - Logout acknowledgment (client clears token)
 
 ### Student Routes (`/api/student`)
 - `GET /dashboard` - Student dashboard
@@ -283,7 +283,7 @@ This project was developed by **Neural Ninjas** for Smart India Hackathon 2025.
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - See LICENSE file for details.
 
 ## Support
 
@@ -293,158 +293,3 @@ For issues or questions, please contact the development team or create an issue 
 
 **Last Updated:** March 21, 2026
 **Version:** 1.0.0
-│   │   └── sw.js               # Service worker
-│   ├── src/
-│   │   ├── App.js              # Main app with routing & auth context
-│   │   ├── index.js            # Entry point
-│   │   ├── services/api.js     # API service layer (axios)
-│   │   ├── components/
-│   │   │   ├── Navbar.js       # Navigation bar
-│   │   │   ├── QRCodeDisplay.js  # QR code with 30s auto-refresh
-│   │   │   └── QRScanner.js    # Camera-based QR scanner
-│   │   ├── pages/
-│   │   │   ├── LoginPage.js
-│   │   │   ├── RegisterPage.js
-│   │   │   ├── StudentDashboard.js
-│   │   │   ├── TeacherDashboard.js
-│   │   │   └── AdminDashboard.js
-│   │   └── styles/
-│   │       └── index.css       # Complete responsive CSS
-│   └── package.json
-└── README.md
-```
-
-## Quick Start
-
-### Prerequisites
-- Python 3.9+
-- Node.js 18+
-
-### 1. Backend Setup
-
-```bash
-cd backend
-
-# Create virtual environment
-python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-# Activate (Mac/Linux)
-# source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the server
-python app.py
-```
-
-The backend starts at **http://localhost:5000**
-
-A default admin account is auto-created:
-- **Username:** `admin`
-- **Password:** `admin123`
-
-### 2. Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm start
-```
-
-The frontend starts at **http://localhost:3000**
-
-## User Roles & Default Login
-
-| Role | Username | Password | Notes |
-|------|----------|----------|-------|
-| Admin | admin | admin123 | Auto-created on first run |
-| Teacher | (created by admin) | — | Admin creates via dashboard |
-| Student | (self-registration) | — | Students register themselves |
-
-## How It Works
-
-### Student Workflow
-1. Register at `/register` with personal and academic details
-2. Login and view auto-generating QR code (refreshes every 30 seconds)
-3. Show QR code to teacher during class for scanning
-4. Track attendance history and percentages in dashboard
-
-### Teacher Workflow
-1. Login and select a subject to **Start Session**
-2. Switch to **Scan QR** tab and point camera at each student's QR code
-3. System verifies token validity (30s window), student identity, and class enrollment
-4. View live attendance list updating in real-time
-5. Use manual override for any technical issues
-6. **End Session** — all unscanned students are auto-marked absent
-
-### Admin/HOD Workflow
-1. Login with admin credentials
-2. **Overview** — See college-wide statistics and activity logs
-3. **Students** — View/search/filter all registered students
-4. **Teachers** — Create teacher accounts and assign subjects
-5. **Subjects** — Create subjects and assign to teachers
-6. **Defaulters** — View students below 75% attendance
-7. **Reports** — Export Excel reports with attendance percentages and daily records
-
-## QR Code Security
-
-Each QR code contains an encrypted JWT token with:
-- Student ID & roll number
-- 30-second expiration timestamp
-- Unique nonce (prevents replay attacks)
-- Device fingerprint (prevents sharing)
-- Session binding (class-specific)
-- AES-256 encryption layer (Fernet)
-
-## Excel Reports
-
-Generated reports include **two sheets**:
-1. **Attendance Summary** — Student-wise percentage per subject with color-coded cells (green ≥75%, yellow ≥50%, red <50%)
-2. **Daily Records** — Individual attendance records with date, subject, status, and timestamp
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` — Student self-registration
-- `POST /api/auth/login` — Login (all roles)
-- `POST /api/auth/logout` — Logout
-- `GET /api/auth/me` — Current user info
-- `PUT /api/auth/update-profile` — Update profile
-
-### Student
-- `POST /api/student/qr-token` — Generate QR token
-- `GET /api/student/attendance` — Attendance records
-- `GET /api/student/attendance-summary` — Percentage summary
-- `GET /api/student/active-sessions` — Current active sessions
-
-### Teacher
-- `POST /api/teacher/start-session` — Start class session
-- `POST /api/teacher/end-session/:id` — End session
-- `POST /api/teacher/scan-qr` — Verify QR and mark attendance
-- `GET /api/teacher/session-attendance/:id` — Session attendance list
-- `GET /api/teacher/subjects` — Assigned subjects
-- `POST /api/teacher/manual-attendance` — Manual override
-
-### Admin
-- `GET /api/admin/dashboard` — Dashboard statistics
-- `GET /api/admin/students` — List students
-- `POST /api/admin/create-teacher` — Create teacher account
-- `POST /api/admin/create-subject` — Create subject
-- `POST /api/admin/override-attendance` — Override attendance
-- `GET /api/admin/export-excel` — Download Excel report
-- `GET /api/admin/defaulters` — Defaulter list
-
-## Configuration
-
-See [SETUP.md](SETUP.md) for detailed environment configuration and [SECURITY.md](SECURITY.md) for security best practices.
-
-## License
-
-This project is for educational purposes.

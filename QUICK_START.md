@@ -4,7 +4,7 @@ Get Smart Attendance System running in 10 minutes!
 
 ## Prerequisites
 
-- Node.js 14+ ([Download](https://nodejs.org/))
+- Node.js 18+ ([Download](https://nodejs.org/))
 - MongoDB ([Download](https://www.mongodb.com/try/download/community) or use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
 - npm (comes with Node.js)
 - Terminal/Command Prompt
@@ -26,6 +26,7 @@ cp .env.example .env
 # At minimum, set:
 # MONGODB_URI=mongodb://localhost:27017/smart_attendance
 # JWT_SECRET=your_secret_key_min_32_chars
+# ADMIN_PASSWORD=<your_secure_password>
 ```
 
 ### 1c. Start MongoDB
@@ -91,26 +92,21 @@ npm start
 ## Step 3: Test the System (2 minutes)
 
 ### Test Admin Login
-1. Click **"Admin Login"** on the page
-2. Email: `admin@smartattendance.com`
+1. Open `http://localhost:3000/login`
+2. Username: `admin`
 3. Password: (use the password you set in `backend/.env` file)
 4. Click **Login**
 
 ### Test Student Flow
-1. Click **"Student"** section
-2. Enrollment No: `E001`
-3. Mobile: `9876543210`
-4. Click **Send OTP**
-5. Enter any 6 digits as OTP
-6. Complete registration
+1. Open `http://localhost:3000/register`
+2. Fill registration form with student details
+3. Create username and password
+4. Submit and login
 
 ### Test Teacher Flow
-1. Click **"Teacher"** section
-2. Teacher ID: `T001`
-3. Mobile: `9876543211`
-4. Click **Send OTP**
-5. Enter any 6 digits as OTP
-6. Login as teacher
+1. Ensure a teacher account exists in database
+2. Use teacher credentials on `http://localhost:3000/login`
+3. Open teacher dashboard after login
 
 ---
 

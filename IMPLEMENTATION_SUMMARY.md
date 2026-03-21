@@ -80,7 +80,7 @@
 | Component | Before | After |
 |-----------|--------|-------|
 | Framework | Flask | Express.js |
-| Language | Python 3.9+ | JavaScript (Node.js 14+) |
+| Language | Python 3.9+ | JavaScript (Node.js 18+) |
 | Database | SQLite/PostgreSQL | MongoDB |
 | ORM/ODM | SQLAlchemy | Mongoose |
 | Authentication | Session-based | JWT Token-based |

@@ -159,7 +159,7 @@ Want More Details?
 
 ### Before First Run
 - [ ] Read [QUICK_START.md](./QUICK_START.md)
-- [ ] Install Node.js 14+
+- [ ] Install Node.js 18+
 - [ ] Install MongoDB (local or Atlas)
 - [ ] Have code editor ready
 
