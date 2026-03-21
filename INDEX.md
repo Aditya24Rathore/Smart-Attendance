@@ -4,8 +4,12 @@ Quick navigation guide to all Smart Attendance System documentation.
 
 ## 📚 Start Here
 
+### ⚠️ SECURITY FIRST
+**👉 Read [SECURITY.md](./SECURITY.md) BEFORE running the system!** (10 min)  
+This covers credential management, best practices, and what to NEVER do.
+
 ### New Users
-1. **👉 [QUICK_START.md](./QUICK_START.md)** - Get running in 10 minutes
+1. **[QUICK_START.md](./QUICK_START.md)** - Get running in 10 minutes
 2. **[SETUP.md](./SETUP.md)** - Detailed step-by-step setup
 
 ### For Development
@@ -13,13 +17,20 @@ Quick navigation guide to all Smart Attendance System documentation.
 2. **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - MongoDB schema documentation
 3. **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Python to Node.js migration details
 
-### For Reference
-1. **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Complete list of changes made
-2. **[backend/README.md](./backend/README.md)** - Backend-specific documentation
+### For Security & Reference
+1. **🔒 [SECURITY.md](./SECURITY.md)** - Critical security guidelines & best practices
+2. **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Complete list of changes made
+3. **[backend/README.md](./backend/README.md)** - Backend-specific documentation
 
 ---
 
 ## 📖 Full Documentation Map
+
+### Security (READ FIRST!)
+| Document | Purpose | Read Time |
+|----------|---------|-----------|
+| **🔒 [SECURITY.md](./SECURITY.md)** | **Security guidelines & credential management** | **10 min** |
+| [SECURITY_FIX_SUMMARY.md](./SECURITY_FIX_SUMMARY.md) | Summary of security fixes applied | 5 min |
 
 ### Quick References (Start with these)
 | Document | Purpose | Read Time |

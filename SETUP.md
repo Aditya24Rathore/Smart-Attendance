@@ -71,8 +71,11 @@ sudo systemctl start mongod
 1. Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 2. Create a free account
 3. Create a cluster
-4. Get connection string: `mongodb+srv://username:password@cluster.mongodb.net/dbname`
-5. Update `MONGODB_URI` in `.env`
+4. In "Connect" section, select "Connect your application"
+5. Copy the connection string (it will look like: `mongodb+srv://...`)
+6. Update `MONGODB_URI` in `.env` with your connection string
+
+⚠️ **IMPORTANT:** Never commit your actual MongoDB URI to version control. Keep credentials in `.env` only (which is gitignored).
 
 ### Step 5: Initialize Database (Seed Admin User)
 ```bash
