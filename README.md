@@ -1,53 +1,298 @@
 # Smart Attendance System
 
-A web-based Smart Attendance System using QR codes for colleges. Students display individually generated, time-sensitive QR codes that teachers scan for instant attendance marking.
+A modern QR-code based attendance system for educational institutions using Node.js/Express, MongoDB, and React.
 
-## Features
+## Project Overview
 
-- **Student Self-Registration** — Students register via the web portal with personal & academic details
-- **30-Second QR Codes** — Each student gets a unique, auto-refreshing QR code with JWT + AES-256 encryption
-- **Teacher QR Scanning** — Mobile-optimized camera scanner for marking attendance instantly
-- **Real-Time Attendance** — WebSocket-powered live attendance updates during class sessions
-- **Admin/HOD Portal** — College-wide analytics, manual overrides, student/teacher management
-- **Excel Reports** — Auto-generated reports with attendance percentages and daily records (two sheets)
-- **Anti-Proxy Security** — Device fingerprinting, session binding, ultra-short token expiry
-- **Role-Based Access** — Student, Teacher, Admin, HOD roles with appropriate permissions
-- **PWA Support** — Installable web app with offline QR generation capability
+This system implements an automated attendance marking system with:
+- **Dynamic QR Codes** - Generated every 30 seconds, preventing screenshots/sharing
+- **OTP Authentication** - Secure login via SMS/Email OTP
+- **Real-time QR Scanning** - Students scan QR codes to mark attendance
+- **Role-Based Access** - Student, Teacher, Admin/HOD roles with different permissions
+- **Analytics & Reports** - Attendance tracking and trend analysis
+- **Offline Support** - Attendance cached locally with auto-sync
+- **MongoDB Database** - Scalable document-oriented database
 
-## Tech Stack
+## Technology Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React.js (PWA), QR Scanner (html5-qrcode), QR Display (qrcode.react) |
-| Backend | Python Flask, Flask-SocketIO, Flask-SQLAlchemy |
-| Database | SQLite (dev) / PostgreSQL (prod) |
-| Auth | Session-based with Werkzeug password hashing |
-| QR Security | JWT tokens (30s expiry) + AES-256 (Fernet) encryption |
-| Reports | openpyxl for Excel generation |
-| Real-time | WebSocket via Socket.IO |
+### Backend
+- **Node.js & Express.js** - Server framework
+- **MongoDB** - NoSQL database
+- **Firebase Admin SDK** - OTP authentication (optional)
+- **JWT** - Token-based authentication
+- **QRCode** - Dynamic QR code generation
+- **Mongoose** - MongoDB ODM
+
+### Frontend
+- **React** - UI framework
+- **React Router** - Client-side routing
+- **Axios** - HTTP client
+- **CSS** - Styling
 
 ## Project Structure
 
 ```
 Smart Attendance/
-├── backend/
-│   ├── app.py                  # Main Flask application
-│   ├── config.py               # Configuration settings
-│   ├── models.py               # Database models (User, Student, Teacher, Subject, Attendance, etc.)
-│   ├── auth.py                 # Authentication decorators
-│   ├── qr_service.py           # QR token generation & verification (JWT + AES)
-│   ├── requirements.txt        # Python dependencies
-│   ├── routes/
-│   │   ├── auth_routes.py      # Login, Register, Profile endpoints
-│   │   ├── student.py          # Student QR generation, attendance history
-│   │   ├── teacher.py          # Session management, QR scanning, attendance
-│   │   └── admin.py            # Admin dashboard, reports, management
-│   └── utils/
-│       └── excel_reports.py    # Excel report generation (2 sheets)
-├── frontend/
-│   ├── public/
-│   │   ├── index.html
-│   │   ├── manifest.json       # PWA manifest
+├── backend/                  # Node.js/Express Backend
+│   ├── models/              # MongoDB Mongoose schemas
+│   │   ├── User.js
+│   │   ├── Student.js
+│   │   ├── Teacher.js
+│   │   ├── Attendance.js
+│   │   ├── Subject.js
+│   │   ├── OTP.js
+│   │   └── QRCode.js
+│   ├── routes/              # API route handlers
+│   │   ├── auth.js
+│   │   ├── student.js
+│   │   ├── teacher.js
+│   │   └── admin.js
+│   ├── services/            # Business logic
+│   │   ├── QRService.js     # QR generation & verification
+│   │   ├── OTPService.js    # OTP management
+│   │   └── EmailService.js
+│   ├── middleware/          # Authentication & validation
+│   │   └── auth.js
+│   ├── scripts/             # Utility scripts
+│   │   ├── seedAdmin.js     # Create admin user
+│   │   └── clearExpiredOTPs.js
+│   ├── server.js            # Main application
+│   ├── db.js                # Database connection
+│   ├── config.js            # Configuration
+│   ├── package.json
+│   └── README.md
+│
+└── frontend/                # React Frontend
+    ├── public/
+    ├── src/
+    │   ├── components/      # Reusable React components
+    │   ├── pages/           # Page components
+    │   ├── services/        # API service layer
+    │   ├── styles/          # CSS styles
+    │   ├── App.js
+    │   └── index.js
+    ├── package.json
+    └── .env
+```
+
+## Features
+
+### Student Features
+- 📱 OTP-based registration and login
+- 📸 Real-time QR code scanning
+- 📊 View attendance history
+- 📈 Track attendance percentage
+- 🔒 Secure authentication with OTP
+
+### Teacher Features
+- 📋 Generate dynamic QR codes (30-second refresh)
+- 👥 View attendance records
+- 📊 Class attendance analysis
+- 📝 Manage attendance manually if needed
+- 🔐 Teacher device acts as scanner only
+
+### Admin/HOD Features
+- 👨‍💼 Manage users (students, teachers)
+- ✅ Verify teacher accounts
+- 📊 Generate attendance reports
+- 📥 Download reports (CSV/PDF)
+- 🔍 Filter attendance by department/semester
+- ✏️ Bulk edit attendance records
+- 📈 Identify disengaged students
+
+## Setup Instructions
+
+### Backend Setup
+
+1. **Install Dependencies**
+   ```bash
+   cd backend
+   npm install
+   ```
+
+2. **Configure Environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your MongoDB credentials and JWT secret
+   ```
+
+3. **Setup MongoDB**
+   ```bash
+   # Using MongoDB Atlas or local MongoDB
+   # Update MONGODB_URI in .env
+   ```
+
+4. **Seed Admin User**
+   ```bash
+   node scripts/seedAdmin.js
+   ```
+
+5. **Start Backend Server**
+   ```bash
+   npm run dev  # Development mode
+   npm start    # Production mode
+   ```
+
+### Frontend Setup
+
+1. **Install Dependencies**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. **Configure API URL**
+   ```bash
+   cp .env.example .env
+   # Update REACT_APP_API_URL if needed
+   ```
+
+3. **Start Frontend Development Server**
+   ```bash
+   npm start
+   ```
+
+The frontend will be available at `http://localhost:3000`
+
+## API Endpoints
+
+### Authentication (`/api/auth`)
+- `POST /student/send-otp` - Send OTP to student
+- `POST /student/verify-otp` - Verify OTP and register/login
+- `POST /teacher/send-otp` - Send OTP to teacher
+- `POST /teacher/verify-otp` - Verify OTP and login
+- `POST /admin/login` - Admin login with credentials
+
+### Student Routes (`/api/student`)
+- `GET /dashboard` - Student dashboard
+- `POST /scan-qr` - Scan QR code for attendance
+- `GET /attendance-history` - View attendance records
+
+### Teacher Routes (`/api/teacher`)
+- `GET /dashboard` - Teacher dashboard
+- `POST /generate-qr` - Generate dynamic QR code
+- `GET /qr-status/:qrHash` - Check QR code status
+- `GET /attendance-records` - View attendance records
+
+### Admin Routes (`/api/admin`)
+- `GET /dashboard` - System statistics
+- `GET /students` - List all students
+- `GET /teachers` - List all teachers
+- `POST /verify-teacher/:teacherId` - Verify teacher
+- `GET /reports/attendance` - Generate reports
+- `POST /bulk-update-attendance` - Bulk update attendance
+
+## Security Features
+
+✅ **JWT Token Authentication** - Stateless authentication
+✅ **OTP-based Login** - SMS/Email OTP verification
+✅ **Encrypted QR Codes** - AES-256 encryption
+✅ **Non-shareable QR** - Cannot be screenshotted or shared
+✅ **Role-Based Access Control** - Different permissions per role
+✅ **Rate Limiting** - Prevent brute force attacks
+✅ **CORS Configuration** - Restrict cross-origin requests
+✅ **HTTPS Recommended** - For production deployment
+
+## QR Code System
+
+- QR codes refresh every **30 seconds**
+- Each QR contains:
+  - Teacher ID
+  - Class/Session ID  
+  - Timestamp
+  - Random unique value
+- Uses **AES-256 encryption**
+- **Non-shareable** - Cannot be used if screenshot is detected
+- **Time-bound** - Valid for exactly 30 seconds
+
+## Environment Variables
+
+### Backend (.env)
+```
+MONGODB_URI=mongodb://user:password@localhost:27017/smart_attendance
+JWT_SECRET=your_32_char_secret_key
+QR_ENCRYPTION_KEY=your_32_char_hex_key
+PORT=5000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Frontend (.env)
+```
+REACT_APP_API_URL=http://localhost:5000/api
+```
+
+## Database Models
+
+### User
+- username, passwordHash, role, fullName, email, phone
+- isActive, isVerified, createdAt, updatedAt
+
+### Student
+- userId, enrollmentNo, rollNumber, department, course
+- semester, year, profilePhoto, deviceFingerprint, mobileNumber
+- registeredAt, isVerified
+
+### Teacher  
+- userId, teacherId, employeeId, department, branch
+- semester, designation, assignedSubjects, isVerified
+
+### Attendance
+- studentId, enrollmentNo, teacherId, subjectId
+- qrCodeHash, qrGeneratedAt, scannedAt, attendanceStatus
+- ipAddress, deviceInfo, remarks, isSynced
+
+### OTP
+- userId, phoneNumber, email, otpCode, otpHash
+- purpose, isUsed, attempts, expiryTime
+
+### QRCode
+- teacherId, classId, qrHash, qrData, qrImage
+- encryptedData, isActive, generatedAt, expiresAt
+- usageCount, lastScannedAt
+
+## Troubleshooting
+
+### Connection Issues
+- Ensure MongoDB is running
+- Check if port 5000 is available
+- Verify MongoDB credentials in .env
+
+### OTP Issues
+- Configure Firebase Admin SDK or email service
+- Check OTP expiry settings
+- Verify phone/email format
+
+### QR Code Issues
+- Ensure QR_ENCRYPTION_KEY is set and is 32 characters
+- Check QR refresh interval setting
+- Verify browser camera permissions
+
+## Development Notes
+
+- MongoDB must be running before starting the backend
+- Configure Firebase Admin SDK for OTP delivery
+- Update `.env` with your actual credentials before deployment
+- Use `npm run dev` for development mode with auto-reload
+- Backend runs on port 5000 by default
+- Frontend runs on port 3000 by default
+
+## Contributing
+
+This project was developed by **Neural Ninjas** for Smart India Hackathon 2025.
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Support
+
+For issues or questions, please contact the development team or create an issue in the repository.
+
+---
+
+**Last Updated:** March 21, 2026
+**Version:** 1.0.0
 │   │   └── sw.js               # Service worker
 │   ├── src/
 │   │   ├── App.js              # Main app with routing & auth context
