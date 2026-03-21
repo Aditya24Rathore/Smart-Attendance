@@ -6,6 +6,14 @@ const bcrypt = require('bcryptjs');
 
 const seedAdmin = async () => {
   try {
+    // Check if ADMIN_PASSWORD is set
+    if (!config.admin.password) {
+      console.error('✗ ADMIN_PASSWORD is not set in backend/.env');
+      console.error('  Please set ADMIN_PASSWORD in backend/.env file and try again');
+      console.error('  Example: ADMIN_PASSWORD=your_secure_password');
+      process.exit(1);
+    }
+
     await connectDB();
     
     // Check if admin already exists

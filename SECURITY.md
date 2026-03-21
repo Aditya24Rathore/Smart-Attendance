@@ -32,10 +32,11 @@ nano backend/.env
 
 Your `.env` file:
 ```
-MONGODB_URI=mongodb+srv://your_username:your_password@your_cluster.mongodb.net/smart_attendance
-JWT_SECRET=your_super_secret_key_min_32_characters
-QR_ENCRYPTION_KEY=your_32_char_hex_key_here
+MONGODB_URI=<copy your connection string from MongoDB Atlas>
+JWT_SECRET=<generate a strong 32+ character random key>
+QR_ENCRYPTION_KEY=<generate a 32-character hex key>
 ```
+⚠️ **Never show actual connection strings or keys - these are examples only**
 
 ### 2. Production Environment
 
@@ -51,10 +52,11 @@ QR_ENCRYPTION_KEY=your_32_char_hex_key_here
 
 **Example (Heroku):**
 ```bash
-heroku config:set MONGODB_URI=mongodb+srv://...
-heroku config:set JWT_SECRET=your_secret_key
-heroku config:set QR_ENCRYPTION_KEY=your_key
+heroku config:set MONGODB_URI=<your_mongodb_connection_string>
+heroku config:set JWT_SECRET=<your_jwt_secret>
+heroku config:set QR_ENCRYPTION_KEY=<your_encryption_key>
 ```
+Replace `<...>` with your actual values. Never share these with others.
 
 ## If You Accidentally Committed Credentials
 
@@ -131,23 +133,24 @@ MONGODB_URI=mongodb://localhost:27017/smart_attendance
 PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
-JWT_SECRET=dev_secret_key_min_32_chars
-QR_ENCRYPTION_KEY=dev_key_32_chars
+JWT_SECRET=<generate_local_key>
+QR_ENCRYPTION_KEY=<generate_local_key>
 OTP_LENGTH=6
 OTP_EXPIRY=10
 ```
 
 ### Production (Use platform's secret manager)
 ```
-MONGODB_URI=production_mongodb_uri
+MONGODB_URI=<production_connection_string>
 PORT=5000
 NODE_ENV=production
 CORS_ORIGIN=https://yourdomain.com
-JWT_SECRET=production_secret_key_min_32_chars
-QR_ENCRYPTION_KEY=production_key_32_chars
-FIREBASE_API_KEY=your_firebase_key
+JWT_SECRET=<production_secret_key>
+QR_ENCRYPTION_KEY=<production_key>
+FIREBASE_API_KEY=<your_firebase_key>
 SMTP_HOST=smtp.gmail.com
 ```
+⚠️ **Replace all `<...>` with your actual values. Never show these in logs or documentation.**
 
 ## Security Headers
 

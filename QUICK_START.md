@@ -93,7 +93,7 @@ npm start
 ### Test Admin Login
 1. Click **"Admin Login"** on the page
 2. Email: `admin@smartattendance.com`
-3. Password: `Admin@123456`
+3. Password: (use the password you set in `backend/.env` file)
 4. Click **Login**
 
 ### Test Student Flow
@@ -306,7 +306,7 @@ After getting it running:
 
 | Role | Email/ID | Password |
 |------|----------|----------|
-| Admin | admin@smartattendance.com | Admin@123456 |
+| Admin | admin@smartattendance.com | Set in `backend/.env` (`ADMIN_PASSWORD`) |
 | Student | (via OTP) | Any 6 digits |
 | Teacher | (via OTP) | Any 6 digits |
 

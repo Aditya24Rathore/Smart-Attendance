@@ -22,7 +22,7 @@ GitHub security scanning detected that example MongoDB connection strings showin
 ### ✅ 1. Updated SETUP.md
 **Removed:**
 ```
-Get connection string: `mongodb+srv://username:password@cluster.mongodb.net/dbname`
+Unsafe examples showing credential patterns in connection strings
 ```
 
 **Replaced with:**

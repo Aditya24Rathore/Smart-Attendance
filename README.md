@@ -209,9 +209,9 @@ The frontend will be available at `http://localhost:3000`
 
 ### Backend (.env)
 ```
-MONGODB_URI=mongodb://user:password@localhost:27017/smart_attendance
-JWT_SECRET=your_32_char_secret_key
-QR_ENCRYPTION_KEY=your_32_char_hex_key
+MONGODB_URI=<your_mongodb_connection_string>
+JWT_SECRET=<your_jwt_secret_key>
+QR_ENCRYPTION_KEY=<your_encryption_key>
 PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
@@ -441,15 +441,9 @@ Generated reports include **two sheets**:
 - `GET /api/admin/export-excel` — Download Excel report
 - `GET /api/admin/defaulters` — Defaulter list
 
-## Environment Variables (Optional)
+## Configuration
 
-```env
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
-QR_ENCRYPTION_KEY=your-encryption-key
-DATABASE_URL=postgresql://user:pass@localhost/smart_attendance
-FLASK_ENV=production
-```
+See [SETUP.md](SETUP.md) for detailed environment configuration and [SECURITY.md](SECURITY.md) for security best practices.
 
 ## License
 

@@ -39,9 +39,9 @@ module.exports = {
     pass: process.env.SMTP_PASS,
   },
   
-  // Admin
+  // Admin (Set in .env.example or backend/.env)
   admin: {
     email: process.env.ADMIN_EMAIL || 'admin@smartattendance.com',
-    password: process.env.ADMIN_PASSWORD || 'Admin@123456',
+    password: process.env.ADMIN_PASSWORD || null, // Must be explicitly set in .env
   },
 };

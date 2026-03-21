@@ -82,12 +82,22 @@ sudo systemctl start mongod
 node scripts/seedAdmin.js
 ```
 
+**Before running the seed script**, set a secure admin password in `backend/.env`:
+```env
+ADMIN_EMAIL=admin@smartattendance.com
+ADMIN_PASSWORD=<your_secure_password>
+```
+
+Run:
+```bash
+npm run seed
+```
+
 Output:
 ```
 ✓ MongoDB Connected Successfully
 ✓ Admin user created successfully
   Email: admin@smartattendance.com
-  Password: Admin@123456
   Please change this password after first login!
 ```
 
@@ -178,7 +188,7 @@ curl http://localhost:5000/api/health
 ### 3. Test Admin Login
 - Click "Admin Login"
 - Email: `admin@smartattendance.com`
-- Password: `Admin@123456`
+- Password: (use the password you set in `ADMIN_PASSWORD` in your `.env` file)
 
 ## Troubleshooting
 

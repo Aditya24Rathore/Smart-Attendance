@@ -214,7 +214,7 @@ OTP_EXPIRY=10
 FIREBASE_API_KEY=your_key
 SMTP_HOST=smtp.gmail.com
 ADMIN_EMAIL=admin@smartattendance.com
-ADMIN_PASSWORD=Admin@123456
+ADMIN_PASSWORD=<change_this_before_production>
 ```
 
 ### Frontend (.env)
