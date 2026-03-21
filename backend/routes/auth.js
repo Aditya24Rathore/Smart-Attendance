@@ -27,6 +27,163 @@ const validateLogin = [
   body('password').notEmpty().withMessage('Password required'),
 ];
 
+// ============= LEGACY COMPATIBILITY ROUTES =============
+
+/**
+ * POST /api/auth/login
+ * Legacy username/password login for existing frontend pages
+ */
+router.post('/login', validateLogin, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { username, password } = req.body;
+    const normalizedUsername = username.toLowerCase();
+
+    const user = await User.findOne({ username: normalizedUsername });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isValidPassword = await user.checkPassword(password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user._id);
+
+    const student = user.role === 'student'
+      ? await Student.findOne({ userId: user._id })
+      : null;
+
+    const teacher = user.role === 'teacher'
+      ? await Teacher.findOne({ userId: user._id })
+      : null;
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: user.toJSON(),
+      student: student ? student.toObject() : null,
+      teacher: teacher ? teacher.toObject() : null,
+    });
+  } catch (error) {
+    console.error('Error in legacy login:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/register
+ * Legacy student registration for existing frontend pages
+ */
+router.post('/register', async (req, res) => {
+  try {
+    const {
+      username,
+      password,
+      full_name,
+      roll_number,
+      department,
+      course,
+      semester,
+      year,
+      phone,
+      email,
+    } = req.body;
+
+    if (!username || !password || !full_name || !roll_number || !department || !course || !semester || !year || !phone) {
+      return res.status(400).json({ error: 'Missing required registration fields' });
+    }
+
+    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Username already exists' });
+    }
+
+    const existingEnrollment = await Student.findOne({ enrollmentNo: roll_number });
+    if (existingEnrollment) {
+      return res.status(409).json({ error: 'Roll number already registered' });
+    }
+
+    const user = new User({
+      username: username.toLowerCase(),
+      passwordHash: password,
+      role: 'student',
+      fullName: full_name,
+      email: email || undefined,
+      phone,
+      isActive: true,
+      isVerified: true,
+    });
+    await user.save();
+
+    const student = new Student({
+      userId: user._id,
+      enrollmentNo: roll_number,
+      rollNumber: roll_number,
+      department,
+      course,
+      semester: parseInt(semester),
+      year: parseInt(year),
+      mobileNumber: phone,
+      isVerified: true,
+    });
+    await student.save();
+
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful',
+      token,
+      user: user.toJSON(),
+      student: student.toObject(),
+    });
+  } catch (error) {
+    console.error('Error in legacy register:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/auth/me
+ * Return current authenticated user and profile
+ */
+router.get('/me', require('../middleware/auth').verifyToken, async (req, res) => {
+  try {
+    const user = req.currentUser;
+    const student = user.role === 'student'
+      ? await Student.findOne({ userId: user._id })
+      : null;
+    const teacher = user.role === 'teacher'
+      ? await Teacher.findOne({ userId: user._id })
+      : null;
+
+    res.json({
+      success: true,
+      user: user.toJSON(),
+      student: student ? student.toObject() : null,
+      teacher: teacher ? teacher.toObject() : null,
+    });
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/logout
+ * JWT logout acknowledgement (client drops token)
+ */
+router.post('/logout', (req, res) => {
+  res.json({ success: true, message: 'Logged out' });
+});
+
 // ============= STUDENT ROUTES =============
 
 /**
