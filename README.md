@@ -277,6 +277,38 @@ REACT_APP_API_URL=http://localhost:5000/api
 - Backend runs on port 5000 by default
 - Frontend runs on port 3000 by default
 
+## Deployment (Vercel + Render)
+
+### Frontend on Vercel
+1. Import repository in Vercel.
+2. Set **Root Directory** to `frontend`.
+3. Build settings:
+   - Build Command: `npm run build`
+   - Output Directory: `build`
+4. Add environment variable:
+   - `REACT_APP_API_URL=https://<your-render-service>.onrender.com/api`
+5. Deploy.
+
+`frontend/vercel.json` is included for SPA route rewrites.
+
+### Backend on Render
+1. In Render, create service using `render.yaml` from repository root.
+2. Set required secret env vars in Render dashboard:
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `QR_ENCRYPTION_KEY`
+   - `CORS_ORIGIN` (your Vercel URL, comma-separated if multiple)
+   - `ADMIN_PASSWORD`
+3. Keep `NODE_ENV=production`.
+4. Deploy and verify health check:
+   - `https://<your-render-service>.onrender.com/api/health`
+
+### Database on Supabase?
+Current backend uses **MongoDB (Mongoose)**, while Supabase is **PostgreSQL-first**.
+
+- Recommended with current code: use **MongoDB Atlas**.
+- To use Supabase as primary DB, backend must be migrated from Mongoose models to SQL schema/queries.
+
 ## Contributing
 
 This project was developed by **Neural Ninjas** for Smart India Hackathon 2025.
