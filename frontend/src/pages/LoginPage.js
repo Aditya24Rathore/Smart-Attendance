@@ -85,6 +85,7 @@ function LoginPage() {
               required
               autoComplete="username"
             />
+            <div className="text-sm text-muted mt-8">Use your registered username (not email).</div>
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
@@ -107,6 +108,7 @@ function LoginPage() {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+            <div className="text-sm text-muted mt-8">Password should be at least 6 characters.</div>
           </div>
           <div className="text-sm text-muted mb-16">
             Logging in as <strong>{role}</strong>

@@ -78,12 +78,14 @@ function RegisterPage() {
               <input type="text" name="roll_number" className="form-input"
                 placeholder="e.g. CS2024001" value={form.roll_number}
                 onChange={handleChange} required />
+              <div className="text-sm text-muted mt-8">Enter the same roll number used by your college records.</div>
             </div>
             <div className="form-group">
               <label className="form-label">Phone *</label>
               <input type="tel" name="phone" className="form-input"
                 placeholder="Phone number" value={form.phone}
                 onChange={handleChange} required />
+              <div className="text-sm text-muted mt-8">Enter a valid mobile number with country code if needed.</div>
             </div>
           </div>
 
@@ -92,6 +94,7 @@ function RegisterPage() {
             <input type="email" name="email" className="form-input"
               placeholder="Optional email" value={form.email}
               onChange={handleChange} />
+            <div className="text-sm text-muted mt-8">Optional, but recommended for account recovery updates.</div>
           </div>
 
           <div className="grid-2">
@@ -137,6 +140,7 @@ function RegisterPage() {
             <input type="text" name="username" className="form-input"
               placeholder="Choose a username" value={form.username}
               onChange={handleChange} required autoComplete="username" />
+            <div className="text-sm text-muted mt-8">Use lowercase letters and numbers only, without spaces.</div>
           </div>
 
           <div className="grid-2">
@@ -153,8 +157,10 @@ function RegisterPage() {
                 placeholder="Re-enter password" value={form.confirm_password}
                 onChange={handleChange} required minLength={6}
                 autoComplete="new-password" />
+              <div className="text-sm text-muted mt-8">Must match the password exactly.</div>
             </div>
           </div>
+          <div className="text-sm text-muted mb-16">Use a password with at least 6 characters.</div>
 
           <button type="submit" className="btn btn-primary btn-block btn-lg mt-8" disabled={loading}>
             {loading ? 'Registering...' : 'Create Account'}
