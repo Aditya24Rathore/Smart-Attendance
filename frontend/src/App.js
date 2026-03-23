@@ -1,12 +1,13 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { getCurrentUser } from './services/api';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import StudentDashboard from './pages/StudentDashboard';
-import TeacherDashboard from './pages/TeacherDashboard';
-import AdminDashboard from './pages/AdminDashboard';
+
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
+const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -19,6 +20,11 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     checkAuth();
   }, []);
 
@@ -30,6 +36,8 @@ function App() {
       setTeacherData(res.data.teacher || null);
     } catch {
       setUser(null);
+      setStudentData(null);
+      setTeacherData(null);
     } finally {
       setLoading(false);
     }
@@ -58,24 +66,32 @@ function App() {
   return (
     <AuthContext.Provider value={{ user, studentData, teacherData, handleLogin, handleLogout, checkAuth }}>
       <Router>
-        <Routes>
-          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
-          <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" />} />
-          <Route
-            path="/*"
-            element={
-              !user ? (
-                <Navigate to="/login" />
-              ) : user.role === 'student' ? (
-                <StudentDashboard />
-              ) : user.role === 'teacher' ? (
-                <TeacherDashboard />
-              ) : (
-                <AdminDashboard />
-              )
-            }
-          />
-        </Routes>
+        <Suspense
+          fallback={
+            <div className="loading" style={{ minHeight: '100vh' }}>
+              <div className="spinner" />
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
+            <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" />} />
+            <Route
+              path="/*"
+              element={
+                !user ? (
+                  <Navigate to="/login" />
+                ) : user.role === 'student' ? (
+                  <StudentDashboard />
+                ) : user.role === 'teacher' ? (
+                  <TeacherDashboard />
+                ) : (
+                  <AdminDashboard />
+                )
+              }
+            />
+          </Routes>
+        </Suspense>
       </Router>
     </AuthContext.Provider>
   );
