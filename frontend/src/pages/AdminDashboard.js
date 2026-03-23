@@ -629,7 +629,7 @@ function CreateSubjectModal({ teachers, onClose, onSuccess, setError }) {
     try {
       await createSubject({
         ...form,
-        teacher_id: form.teacher_id ? parseInt(form.teacher_id) : null,
+        teacher_id: form.teacher_id || null,
       });
       onSuccess();
     } catch (err) {

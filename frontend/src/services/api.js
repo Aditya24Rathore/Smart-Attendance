@@ -141,7 +141,24 @@ export const getTeacherAttendanceRecords = (page = 1, limit = 20, month, year) =
 // ============= ADMIN ROUTES =============
 
 export const getAdminDashboard = () =>
-  api.get('/admin/dashboard');
+  api.get('/admin/dashboard').then((res) => {
+    const statistics = res.data?.statistics || {};
+    return {
+      ...res,
+      data: {
+        ...res.data,
+        stats: {
+          total_students: Number(statistics.totalStudents || 0),
+          total_teachers: Number(statistics.totalTeachers || 0),
+          total_subjects: Number(statistics.totalSubjects || 0),
+          active_sessions: Number(statistics.activeSessions || 0),
+          today_sessions: Number(statistics.todaySessions || 0),
+          today_attendance: Number(statistics.todayAttendance || 0),
+        },
+        recent_logs: res.data?.recent_logs || [],
+      },
+    };
+  });
 
 export const getStudentsList = (page = 1, limit = 20, department, semester) =>
   api.get('/admin/students', {
@@ -301,23 +318,44 @@ export const getDepartments = () =>
     return { ...res, data: { departments } };
   });
 
-export const getSubjects = () => resolved({ subjects: [] });
+export const getSubjects = (params = {}) =>
+  api.get('/admin/subjects', { params }).then((res) => {
+    const subjects = (res.data?.subjects || []).map((item) => ({
+      id: item._id,
+      code: item.subjectCode,
+      name: item.subjectName,
+      department: item.department,
+      semester: item.semester,
+      teacher_name: item.teacherId?.userId?.fullName || null,
+    }));
+    return { ...res, data: { ...res.data, subjects } };
+  });
 
-export const createTeacher = () =>
-  Promise.reject(new Error('Create teacher endpoint not implemented in current backend'));
+export const createTeacher = (payload) =>
+  api.post('/admin/teachers', payload);
 
-export const createSubject = () =>
-  Promise.reject(new Error('Create subject endpoint not implemented in current backend'));
+export const createSubject = (payload) =>
+  api.post('/admin/subjects', payload);
 
 export const overrideAttendance = (updates) =>
   bulkUpdateAttendance(updates);
 
-export const getDefaulters = () => resolved({ defaulters: [] });
+export const getDefaulters = (params = {}) =>
+  api.get('/admin/defaulters', { params }).then((res) => ({
+    ...res,
+    data: {
+      ...res.data,
+      defaulters: res.data?.defaulters || [],
+    },
+  }));
 
-export const toggleUser = () =>
-  Promise.reject(new Error('Toggle user endpoint not implemented in current backend'));
+export const toggleUser = (userId) =>
+  api.patch(`/admin/users/${userId}/toggle`);
 
-export const exportExcel = () =>
-  Promise.reject(new Error('Excel export endpoint not implemented in current backend'));
+export const exportExcel = (params = {}) =>
+  api.get('/admin/export/excel', {
+    params,
+    responseType: 'blob',
+  });
 
 export default api;
