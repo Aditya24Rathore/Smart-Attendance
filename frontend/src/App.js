@@ -25,7 +25,16 @@ function App() {
       setLoading(false);
       return;
     }
-    checkAuth();
+
+    const bootstrapTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 8000);
+
+    checkAuth().finally(() => {
+      clearTimeout(bootstrapTimeout);
+    });
+
+    return () => clearTimeout(bootstrapTimeout);
   }, []);
 
   const checkAuth = async () => {

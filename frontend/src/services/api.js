@@ -1,11 +1,16 @@
 import axios from 'axios';
 
-const configuredApiBase = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').trim();
+const defaultApiBase = process.env.NODE_ENV === 'production'
+  ? 'https://smart-attendance-backend.onrender.com/api'
+  : 'http://localhost:5000/api';
+
+const configuredApiBase = (process.env.REACT_APP_API_URL || defaultApiBase).trim();
 const trimmedApiBase = configuredApiBase.replace(/\/+$/, '');
 const API_BASE = trimmedApiBase.endsWith('/api') ? trimmedApiBase : `${trimmedApiBase}/api`;
 
 const api = axios.create({
   baseURL: API_BASE,
+  timeout: 15000,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
