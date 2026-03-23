@@ -164,6 +164,9 @@ export const getAttendanceReport = (month, year, studentId, department) =>
 export const bulkUpdateAttendance = (updates) =>
   api.post('/admin/bulk-update-attendance', { updates });
 
+export const updateAdminCredentials = (payload) =>
+  api.patch('/admin/account/credentials', payload);
+
 // ============= HEALTH CHECK =============
 
 export const healthCheck = () =>

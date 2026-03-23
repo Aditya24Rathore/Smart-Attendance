@@ -1,7 +1,64 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { User, Student, Teacher, Attendance } = require('../models');
 const router = express.Router();
+
+/**
+ * PATCH /api/admin/account/credentials
+ * Update current admin/hod email and/or password
+ */
+router.patch('/account/credentials', verifyToken, requireRole('admin', 'hod'), [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('email').optional().isEmail().withMessage('Valid email is required'),
+  body('newPassword').optional().isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { currentPassword, email, newPassword } = req.body;
+    const user = req.currentUser;
+
+    const isCurrentPasswordValid = await user.checkPassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : undefined;
+    const hasEmailUpdate = normalizedEmail && normalizedEmail !== user.email;
+    const hasPasswordUpdate = typeof newPassword === 'string' && newPassword.trim().length > 0;
+
+    if (!hasEmailUpdate && !hasPasswordUpdate) {
+      return res.status(400).json({ error: 'No changes to update' });
+    }
+
+    if (hasEmailUpdate) {
+      const existingUser = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+      if (existingUser) {
+        return res.status(409).json({ error: 'Email already in use' });
+      }
+      user.email = normalizedEmail;
+    }
+
+    if (hasPasswordUpdate) {
+      user.passwordHash = newPassword;
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Account credentials updated successfully',
+      user: user.toJSON(),
+    });
+  } catch (error) {
+    console.error('Error updating admin credentials:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 /**
  * GET /api/admin/dashboard

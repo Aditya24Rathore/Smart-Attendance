@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../App';
 import {
   getAdminDashboard, getStudents, getTeachers, createTeacher,
   createSubject, getSubjects, overrideAttendance, exportExcel,
-  getDefaulters, toggleUser, getDepartments,
+  getDefaulters, toggleUser, getDepartments, updateAdminCredentials,
 } from '../services/api';
 
 function AdminDashboard() {
@@ -22,6 +23,7 @@ function AdminDashboard() {
 }
 
 function AdminHome() {
+  const { user, handleLogin } = useAuth();
   const [tab, setTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [students, setStudents] = useState([]);
@@ -35,6 +37,12 @@ function AdminHome() {
   const [showModal, setShowModal] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [accountForm, setAccountForm] = useState({
+    email: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   useEffect(() => { loadDashboard(); }, []);
 
@@ -85,6 +93,12 @@ function AdminHome() {
     else if (tab === 'defaulters') loadDefaulters();
   }, [tab, filterDept]);
 
+  useEffect(() => {
+    if (user?.email) {
+      setAccountForm((prev) => ({ ...prev, email: user.email }));
+    }
+  }, [user]);
+
   const handleExport = async () => {
     try {
       const res = await exportExcel({ department: filterDept });
@@ -109,15 +123,78 @@ function AdminHome() {
     } catch {}
   };
 
+  const handleAccountUpdate = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    const trimmedEmail = accountForm.email.trim();
+    const trimmedNewPassword = accountForm.newPassword.trim();
+    const emailChanged = trimmedEmail && trimmedEmail !== (user?.email || '');
+    const passwordChanged = !!trimmedNewPassword;
+
+    if (!accountForm.currentPassword) {
+      setError('Current password is required');
+      return;
+    }
+
+    if (!emailChanged && !passwordChanged) {
+      setError('No changes to update');
+      return;
+    }
+
+    if (passwordChanged && trimmedNewPassword.length < 6) {
+      setError('New password must be at least 6 characters');
+      return;
+    }
+
+    if (passwordChanged && accountForm.newPassword !== accountForm.confirmPassword) {
+      setError('New password and confirm password do not match');
+      return;
+    }
+
+    try {
+      const payload = {
+        currentPassword: accountForm.currentPassword,
+      };
+
+      if (emailChanged) {
+        payload.email = trimmedEmail;
+      }
+
+      if (passwordChanged) {
+        payload.newPassword = accountForm.newPassword;
+      }
+
+      const res = await updateAdminCredentials(payload);
+      const updatedUser = res.data?.user;
+
+      if (updatedUser) {
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        handleLogin(updatedUser, null, null);
+      }
+
+      setAccountForm((prev) => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+      setSuccess('Account credentials updated successfully');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update account credentials');
+    }
+  };
+
   return (
     <>
       {/* Tab Navigation */}
       <div className="tabs" style={{ flexWrap: 'wrap' }}>
-        {['overview', 'students', 'teachers', 'subjects', 'defaulters', 'reports'].map(t => (
+        {['overview', 'students', 'teachers', 'subjects', 'defaulters', 'reports', 'settings'].map(t => (
           <button key={t} className={`tab ${tab === t ? 'active' : ''}`}
             onClick={() => setTab(t)}>
             {t === 'overview' && '📊'} {t === 'students' && '🎓'} {t === 'teachers' && '👨‍🏫'}
-            {t === 'subjects' && '📚'} {t === 'defaulters' && '⚠️'} {t === 'reports' && '📄'}
+            {t === 'subjects' && '📚'} {t === 'defaulters' && '⚠️'} {t === 'reports' && '📄'} {t === 'settings' && '⚙️'}
             {' '}{t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -364,6 +441,65 @@ function AdminHome() {
           <button className="btn btn-success btn-block btn-lg" onClick={handleExport}>
             📥 Download Excel Report
           </button>
+        </div>
+      )}
+
+      {tab === 'settings' && (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Account Settings</h3>
+          </div>
+          <form onSubmit={handleAccountUpdate}>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                className="form-input"
+                value={accountForm.email}
+                onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                placeholder="Enter admin email"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Current Password *</label>
+              <input
+                type="password"
+                className="form-input"
+                value={accountForm.currentPassword}
+                onChange={(e) => setAccountForm({ ...accountForm, currentPassword: e.target.value })}
+                placeholder="Enter current password"
+                required
+              />
+            </div>
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">New Password</label>
+                <input
+                  type="password"
+                  className="form-input"
+                  value={accountForm.newPassword}
+                  onChange={(e) => setAccountForm({ ...accountForm, newPassword: e.target.value })}
+                  placeholder="Leave empty to keep current"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Confirm New Password</label>
+                <input
+                  type="password"
+                  className="form-input"
+                  value={accountForm.confirmPassword}
+                  onChange={(e) => setAccountForm({ ...accountForm, confirmPassword: e.target.value })}
+                  placeholder="Re-enter new password"
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary btn-lg btn-block">
+              Save Account Changes
+            </button>
+          </form>
         </div>
       )}
 
