@@ -21,3 +21,16 @@ services:
         value: admin@smartattendance.com
       - key: ADMIN_PASSWORD
         sync: false
+
+  - type: static
+    name: smart-attendance-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
