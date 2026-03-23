@@ -5,6 +5,13 @@ const { generateToken } = require('../middleware/auth');
 const OTPService = require('../services/OTPService');
 const router = express.Router();
 
+const buildValidationError = (errors) => {
+  if (!errors || errors.length === 0) {
+    return 'Validation failed';
+  }
+  return errors.map((item) => item.msg).join(', ');
+};
+
 // Validation rules
 const validateStudentRegister = [
   body('enrollmentNo').notEmpty().withMessage('Enrollment number required'),
@@ -37,20 +44,28 @@ router.post('/login', validateLogin, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      const validationErrors = errors.array();
+      return res.status(400).json({
+        error: buildValidationError(validationErrors),
+        errors: validationErrors,
+      });
     }
 
     const { username, password } = req.body;
     const normalizedUsername = username.toLowerCase();
 
     const user = await User.findOne({ username: normalizedUsername });
-    if (!user || !user.isActive) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user) {
+      return res.status(401).json({ error: 'Username not found' });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ error: 'Account is disabled. Contact administrator.' });
     }
 
     const isValidPassword = await user.checkPassword(password);
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Incorrect password' });
     }
 
     const token = generateToken(user._id);
@@ -96,56 +111,104 @@ router.post('/register', async (req, res) => {
       email,
     } = req.body;
 
-    if (!username || !password || !full_name || !roll_number || !department || !course || !semester || !year || !phone) {
-      return res.status(400).json({ error: 'Missing required registration fields' });
+    const missingFields = [];
+    if (!username) missingFields.push('username');
+    if (!password) missingFields.push('password');
+    if (!full_name) missingFields.push('full_name');
+    if (!roll_number) missingFields.push('roll_number');
+    if (!department) missingFields.push('department');
+    if (!course) missingFields.push('course');
+    if (!semester) missingFields.push('semester');
+    if (!year) missingFields.push('year');
+    if (!phone) missingFields.push('phone');
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+      });
     }
 
-    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    const normalizedUsername = String(username).trim().toLowerCase();
+    const normalizedRollNumber = String(roll_number).trim();
+    const normalizedEmail = email ? String(email).trim().toLowerCase() : undefined;
+    const parsedSemester = Number.parseInt(semester, 10);
+    const parsedYear = Number.parseInt(year, 10);
+
+    if (!Number.isInteger(parsedSemester) || parsedSemester < 1 || parsedSemester > 8) {
+      return res.status(400).json({ error: 'Semester must be a number between 1 and 8' });
+    }
+
+    if (!Number.isInteger(parsedYear) || parsedYear < 1 || parsedYear > 4) {
+      return res.status(400).json({ error: 'Year must be a number between 1 and 4' });
+    }
+
+    if (normalizedEmail) {
+      const existingEmail = await User.findOne({ email: normalizedEmail });
+      if (existingEmail) {
+        return res.status(409).json({ error: 'Email already registered' });
+      }
+    }
+
+    const existingUser = await User.findOne({ username: normalizedUsername });
     if (existingUser) {
       return res.status(409).json({ error: 'Username already exists' });
     }
 
-    const existingEnrollment = await Student.findOne({ enrollmentNo: roll_number });
+    const existingEnrollment = await Student.findOne({ enrollmentNo: normalizedRollNumber });
     if (existingEnrollment) {
       return res.status(409).json({ error: 'Roll number already registered' });
     }
 
     const user = new User({
-      username: username.toLowerCase(),
+      username: normalizedUsername,
       passwordHash: password,
       role: 'student',
       fullName: full_name,
-      email: email || undefined,
+      email: normalizedEmail || undefined,
       phone,
       isActive: true,
       isVerified: true,
     });
     await user.save();
 
-    const student = new Student({
-      userId: user._id,
-      enrollmentNo: roll_number,
-      rollNumber: roll_number,
-      department,
-      course,
-      semester: parseInt(semester),
-      year: parseInt(year),
-      mobileNumber: phone,
-      isVerified: true,
-    });
-    await student.save();
+    try {
+      const student = new Student({
+        userId: user._id,
+        enrollmentNo: normalizedRollNumber,
+        rollNumber: normalizedRollNumber,
+        department,
+        course,
+        semester: parsedSemester,
+        year: parsedYear,
+        mobileNumber: phone,
+        isVerified: true,
+      });
+      await student.save();
 
-    const token = generateToken(user._id);
+      const token = generateToken(user._id);
 
-    res.status(201).json({
-      success: true,
-      message: 'Registration successful',
-      token,
-      user: user.toJSON(),
-      student: student.toObject(),
-    });
+      return res.status(201).json({
+        success: true,
+        message: 'Registration successful',
+        token,
+        user: user.toJSON(),
+        student: student.toObject(),
+      });
+    } catch (studentError) {
+      await User.findByIdAndDelete(user._id);
+      throw studentError;
+    }
   } catch (error) {
     console.error('Error in legacy register:', error);
+
+    if (error?.code === 11000) {
+      const duplicateField = Object.keys(error.keyPattern || {})[0] || 'field';
+      const mappedField = duplicateField === 'enrollmentNo'
+        ? 'roll number'
+        : duplicateField;
+      return res.status(409).json({ error: `${mappedField} already exists` });
+    }
+
     res.status(500).json({ error: error.message });
   }
 });

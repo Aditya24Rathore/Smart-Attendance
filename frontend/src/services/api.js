@@ -8,6 +8,45 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const isAuthErrorWhitelistedPath = (url = '') => {
+  const authPaths = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/student/send-otp',
+    '/auth/student/verify-otp',
+    '/auth/teacher/send-otp',
+    '/auth/teacher/verify-otp',
+    '/auth/admin/login',
+  ];
+  return authPaths.some((path) => url.includes(path));
+};
+
+export const getApiErrorMessage = (error, fallbackMessage = 'Something went wrong') => {
+  const data = error?.response?.data;
+
+  if (Array.isArray(data?.errors) && data.errors.length > 0) {
+    return data.errors.map((item) => item.msg).join(', ');
+  }
+
+  if (typeof data?.error === 'string' && data.error.trim()) {
+    return data.error;
+  }
+
+  if (typeof data?.message === 'string' && data.message.trim()) {
+    return data.message;
+  }
+
+  if (typeof error?.message === 'string' && error.message.trim() && error.message !== 'Network Error') {
+    return error.message;
+  }
+
+  if (error?.message === 'Network Error') {
+    return 'Cannot connect to server. Please check backend is running and API URL is correct.';
+  }
+
+  return fallbackMessage;
+};
+
 // Add JWT token to all requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -21,7 +60,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error?.config?.url || '';
+    const skipAutoRedirect = isAuthErrorWhitelistedPath(requestUrl);
+
+    if (error.response?.status === 401 && !skipAutoRedirect) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

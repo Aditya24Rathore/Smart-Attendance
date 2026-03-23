@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../services/api';
+import { login, getApiErrorMessage } from '../services/api';
 import { useAuth } from '../App';
 
 function LoginPage() {
@@ -16,11 +16,11 @@ function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await login(username, password);
+      const res = await login(username.trim(), password);
       handleLogin(res.data.user, res.data.student, res.data.teacher);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(getApiErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }

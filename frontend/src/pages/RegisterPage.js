@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { register } from '../services/api';
+import { register, getApiErrorMessage } from '../services/api';
 import { useAuth } from '../App';
 
 function RegisterPage() {
@@ -29,11 +29,22 @@ function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await register(form);
+      const payload = {
+        ...form,
+        username: form.username.trim(),
+        full_name: form.full_name.trim(),
+        roll_number: form.roll_number.trim(),
+        department: form.department.trim(),
+        course: form.course.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+      };
+
+      const res = await register(payload);
       handleLogin(res.data.user, res.data.student, null);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed');
+      setError(getApiErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
