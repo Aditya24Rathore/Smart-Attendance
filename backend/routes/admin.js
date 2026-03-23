@@ -5,6 +5,53 @@ const { User, Student, Teacher, Subject, Attendance } = require('../models');
 const XLSX = require('xlsx');
 const router = express.Router();
 
+const buildAttendanceExportRows = async (department) => {
+  const studentFilter = {};
+  if (department) {
+    studentFilter.department = department;
+  }
+
+  const students = await Student.find(studentFilter).populate('userId');
+  const studentIdSet = new Set(students.map((s) => String(s._id)));
+
+  const attendanceRecords = await Attendance.find({ studentId: { $in: students.map((s) => s._id) } })
+    .populate('studentId')
+    .populate('teacherId')
+    .populate('subjectId')
+    .sort({ scannedAt: -1 });
+
+  const summaryRows = students.map((student) => {
+    const records = attendanceRecords.filter((record) => String(record.studentId?._id || record.studentId) === String(student._id));
+    const total = records.length;
+    const present = records.filter((record) => ['present', 'late'].includes(record.attendanceStatus)).length;
+    const percentage = total > 0 ? Number(((present / total) * 100).toFixed(2)) : 0;
+
+    return {
+      RollNumber: student.rollNumber || student.enrollmentNo,
+      FullName: student.userId?.fullName || '',
+      Department: student.department,
+      Semester: student.semester,
+      TotalSessions: total,
+      PresentOrLate: present,
+      AttendancePercentage: percentage,
+    };
+  });
+
+  const detailRows = attendanceRecords
+    .filter((record) => studentIdSet.has(String(record.studentId?._id || record.studentId)))
+    .map((record) => ({
+      Date: new Date(record.scannedAt).toISOString(),
+      EnrollmentNo: record.enrollmentNo,
+      Student: record.studentId?.enrollmentNo || '',
+      TeacherId: record.teacherId?.teacherId || '',
+      SubjectCode: record.subjectId?.subjectCode || '',
+      SubjectName: record.subjectId?.subjectName || '',
+      Status: record.attendanceStatus,
+    }));
+
+  return { summaryRows, detailRows };
+};
+
 /**
  * PATCH /api/admin/account/credentials
  * Update current admin/hod email and/or password
@@ -346,49 +393,7 @@ router.get('/defaulters', verifyToken, requireRole('admin', 'hod'), async (req, 
 router.get('/export/excel', verifyToken, requireRole('admin', 'hod'), async (req, res) => {
   try {
     const { department } = req.query;
-
-    const studentFilter = {};
-    if (department) {
-      studentFilter.department = department;
-    }
-
-    const students = await Student.find(studentFilter).populate('userId');
-    const studentIdSet = new Set(students.map((s) => String(s._id)));
-
-    const attendanceRecords = await Attendance.find({ studentId: { $in: students.map((s) => s._id) } })
-      .populate('studentId')
-      .populate('teacherId')
-      .populate('subjectId')
-      .sort({ scannedAt: -1 });
-
-    const summaryRows = students.map((student) => {
-      const records = attendanceRecords.filter((record) => String(record.studentId?._id || record.studentId) === String(student._id));
-      const total = records.length;
-      const present = records.filter((record) => ['present', 'late'].includes(record.attendanceStatus)).length;
-      const percentage = total > 0 ? Number(((present / total) * 100).toFixed(2)) : 0;
-
-      return {
-        RollNumber: student.rollNumber || student.enrollmentNo,
-        FullName: student.userId?.fullName || '',
-        Department: student.department,
-        Semester: student.semester,
-        TotalSessions: total,
-        PresentOrLate: present,
-        AttendancePercentage: percentage,
-      };
-    });
-
-    const detailRows = attendanceRecords
-      .filter((record) => studentIdSet.has(String(record.studentId?._id || record.studentId)))
-      .map((record) => ({
-        Date: new Date(record.scannedAt).toISOString(),
-        EnrollmentNo: record.enrollmentNo,
-        Student: record.studentId?.enrollmentNo || '',
-        TeacherId: record.teacherId?.teacherId || '',
-        SubjectCode: record.subjectId?.subjectCode || '',
-        SubjectName: record.subjectId?.subjectName || '',
-        Status: record.attendanceStatus,
-      }));
+    const { summaryRows, detailRows } = await buildAttendanceExportRows(department);
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(summaryRows), 'Summary');
@@ -401,6 +406,27 @@ router.get('/export/excel', verifyToken, requireRole('admin', 'hod'), async (req
     res.send(excelBuffer);
   } catch (error) {
     console.error('Error exporting excel report:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/export/google-sheets
+ * Export attendance report as CSV for Google Sheets import
+ */
+router.get('/export/google-sheets', verifyToken, requireRole('admin', 'hod'), async (req, res) => {
+  try {
+    const { department } = req.query;
+    const { detailRows } = await buildAttendanceExportRows(department);
+
+    const csvSheet = XLSX.utils.json_to_sheet(detailRows);
+    const csv = XLSX.utils.sheet_to_csv(csvSheet);
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="attendance_google_sheets.csv"');
+    res.send(csv);
+  } catch (error) {
+    console.error('Error exporting Google Sheets CSV report:', error);
     res.status(500).json({ error: error.message });
   }
 });

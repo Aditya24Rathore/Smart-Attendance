@@ -5,7 +5,7 @@ import { useAuth } from '../App';
 import {
   getAdminDashboard, getStudents, getTeachers, createTeacher,
   createSubject, getSubjects, overrideAttendance, exportExcel,
-  getDefaulters, toggleUser, getDepartments, updateAdminCredentials,
+  exportGoogleSheets, getDefaulters, toggleUser, getDepartments, updateAdminCredentials,
 } from '../services/api';
 
 function AdminDashboard() {
@@ -37,6 +37,7 @@ function AdminHome() {
   const [showModal, setShowModal] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [exportingType, setExportingType] = useState('');
   const [accountForm, setAccountForm] = useState({
     email: '',
     currentPassword: '',
@@ -99,19 +100,42 @@ function AdminHome() {
     }
   }, [user]);
 
-  const handleExport = async () => {
+  const downloadBlob = (blobData, filename) => {
+    const url = window.URL.createObjectURL(new Blob([blobData]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = async () => {
+    setError('');
+    setExportingType('excel');
     try {
       const res = await exportExcel({ department: filterDept });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `attendance_report.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      downloadBlob(res.data, 'attendance_report.xlsx');
+      setSuccess('Excel report downloaded successfully');
     } catch {
-      setError('Export failed');
+      setError('Excel export failed');
+    } finally {
+      setExportingType('');
+    }
+  };
+
+  const handleExportGoogleSheets = async () => {
+    setError('');
+    setExportingType('google-sheets');
+    try {
+      const res = await exportGoogleSheets({ department: filterDept });
+      downloadBlob(res.data, 'attendance_google_sheets.csv');
+      setSuccess('Google Sheets CSV downloaded successfully');
+    } catch {
+      setError('Google Sheets export failed');
+    } finally {
+      setExportingType('');
     }
   };
 
@@ -427,8 +451,7 @@ function AdminHome() {
             <h3 className="card-title">Export Reports</h3>
           </div>
           <p className="text-muted mb-16">
-            Generate comprehensive attendance reports in Excel format with two sheets:
-            student-wise percentage summary and daily attendance records.
+            Download attendance data in Excel format or CSV format ready for Google Sheets import.
           </p>
           <div className="form-group">
             <label className="form-label">Department Filter</label>
@@ -438,9 +461,25 @@ function AdminHome() {
               {departments.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
-          <button className="btn btn-success btn-block btn-lg" onClick={handleExport}>
-            📥 Download Excel Report
-          </button>
+          <div className="grid-2">
+            <button
+              className="btn btn-success btn-lg"
+              onClick={handleExportExcel}
+              disabled={!!exportingType}
+            >
+              {exportingType === 'excel' ? 'Exporting Excel...' : '📥 Export Excel (.xlsx)'}
+            </button>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={handleExportGoogleSheets}
+              disabled={!!exportingType}
+            >
+              {exportingType === 'google-sheets' ? 'Exporting CSV...' : '📄 Export Google Sheets (.csv)'}
+            </button>
+          </div>
+          <p className="text-sm text-muted mt-8">
+            Tip: In Google Sheets, use File → Import and select the downloaded CSV file.
+          </p>
         </div>
       )}
 

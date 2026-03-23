@@ -358,4 +358,10 @@ export const exportExcel = (params = {}) =>
     responseType: 'blob',
   });
 
+export const exportGoogleSheets = (params = {}) =>
+  api.get('/admin/export/google-sheets', {
+    params,
+    responseType: 'blob',
+  });
+
 export default api;
