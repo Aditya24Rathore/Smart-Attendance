@@ -5,7 +5,7 @@ import { useAuth } from '../App';
 
 function RegisterPage() {
   const [form, setForm] = useState({
-    username: '', password: '', confirm_password: '', full_name: '',
+    password: '', confirm_password: '', full_name: '',
     roll_number: '', department: '', course: '', semester: '',
     year: '', phone: '', email: '',
   });
@@ -31,7 +31,6 @@ function RegisterPage() {
     try {
       const payload = {
         ...form,
-        username: form.username.trim(),
         full_name: form.full_name.trim(),
         roll_number: form.roll_number.trim(),
         department: form.department.trim(),
@@ -135,13 +134,7 @@ function RegisterPage() {
 
           <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #e2e8f0' }} />
 
-          <div className="form-group">
-            <label className="form-label">Username *</label>
-            <input type="text" name="username" className="form-input"
-              placeholder="Choose a username" value={form.username}
-              onChange={handleChange} required autoComplete="username" />
-            <div className="text-sm text-muted mt-8">Use lowercase letters and numbers only, without spaces.</div>
-          </div>
+          <div className="text-sm text-muted mb-16">Your Roll Number will be used as your User ID for login.</div>
 
           <div className="grid-2">
             <div className="form-group">

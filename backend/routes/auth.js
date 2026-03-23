@@ -52,9 +52,20 @@ router.post('/login', validateLogin, async (req, res) => {
     }
 
     const { username, password } = req.body;
-    const normalizedUsername = username.toLowerCase();
+    const normalizedUsername = String(username).trim().toLowerCase();
 
-    const user = await User.findOne({ username: normalizedUsername });
+    let user = await User.findOne({ username: normalizedUsername });
+    if (!user) {
+      const escapedUsername = normalizedUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const student = await Student.findOne({
+        enrollmentNo: { $regex: new RegExp(`^${escapedUsername}$`, 'i') },
+      });
+
+      if (student?.userId) {
+        user = await User.findById(student.userId);
+      }
+    }
+
     if (!user) {
       return res.status(401).json({ error: 'Username not found' });
     }
@@ -99,7 +110,6 @@ router.post('/login', validateLogin, async (req, res) => {
 router.post('/register', async (req, res) => {
   try {
     const {
-      username,
       password,
       full_name,
       roll_number,
@@ -112,7 +122,6 @@ router.post('/register', async (req, res) => {
     } = req.body;
 
     const missingFields = [];
-    if (!username) missingFields.push('username');
     if (!password) missingFields.push('password');
     if (!full_name) missingFields.push('full_name');
     if (!roll_number) missingFields.push('roll_number');
@@ -128,8 +137,8 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const normalizedUsername = String(username).trim().toLowerCase();
     const normalizedRollNumber = String(roll_number).trim();
+    const normalizedUsername = normalizedRollNumber.toLowerCase();
     const normalizedEmail = email ? String(email).trim().toLowerCase() : undefined;
     const parsedSemester = Number.parseInt(semester, 10);
     const parsedYear = Number.parseInt(year, 10);

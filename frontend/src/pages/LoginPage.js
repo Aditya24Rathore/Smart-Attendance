@@ -69,13 +69,15 @@ function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Username</label>
+            <label className="form-label">
+              {role === 'student' ? 'Roll Number (User ID)' : 'Username'}
+            </label>
             <input
               type="text"
               className="form-input"
               placeholder={
                 role === 'student'
-                  ? 'Enter student username'
+                  ? 'Enter student roll number'
                   : role === 'teacher'
                     ? 'Enter teacher username'
                     : 'Enter admin username'
@@ -85,7 +87,11 @@ function LoginPage() {
               required
               autoComplete="username"
             />
-            <div className="text-sm text-muted mt-8">Use your registered username (not email).</div>
+            <div className="text-sm text-muted mt-8">
+              {role === 'student'
+                ? 'Use your registered roll number as User ID (not email).'
+                : 'Use your registered username (not email).'}
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
