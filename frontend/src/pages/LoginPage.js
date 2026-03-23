@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, getApiErrorMessage } from '../services/api';
+import { login } from '../services/api';
 import { useAuth } from '../App';
 
 function LoginPage() {
   const [role, setRole] = useState('student');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { handleLogin } = useAuth();
@@ -20,14 +21,14 @@ function LoginPage() {
       const res = await login(username.trim(), password);
 
       if (res.data?.user?.role !== role) {
-        setError(`This account is ${res.data?.user?.role || 'not authorized'}. Please choose the correct role.`);
+        setError('Invalid login credentials. Please try again.');
         return;
       }
 
       handleLogin(res.data.user, res.data.student, res.data.teacher);
       navigate('/');
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'Login failed'));
+    } catch {
+      setError('Invalid login credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -87,15 +88,25 @@ function LoginPage() {
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="form-input"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="password-toggle-button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
           <div className="text-sm text-muted mb-16">
             Logging in as <strong>{role}</strong>
