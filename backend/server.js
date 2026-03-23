@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { connectDB } = require('./db');
 const config = require('./config');
+const { ensureAdminAccount } = require('./services/AdminBootstrapService');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -97,6 +98,7 @@ app.use((req, res) => {
 const startServer = async () => {
   try {
     await connectDB();
+    await ensureAdminAccount();
     
     const PORT = config.port || 5000;
     app.listen(PORT, () => {
