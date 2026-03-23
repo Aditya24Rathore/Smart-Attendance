@@ -10,7 +10,11 @@ module.exports = {
   mongodbPassword: process.env.MONGODB_PASSWORD,
   
   // CORS
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  corsOrigin: process.env.CORS_ORIGIN || [
+    'http://localhost:3000',
+    'https://smart-attendance-frontend.onrender.com',
+    'https://smart-attendance-frontend-wbsb.onrender.com',
+  ].join(','),
   
   // JWT
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_key_here',

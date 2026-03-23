@@ -17,7 +17,7 @@ services:
       - key: QR_ENCRYPTION_KEY
         sync: false
       - key: CORS_ORIGIN
-        sync: false
+        value: http://localhost:3000,https://smart-attendance-frontend.onrender.com,https://smart-attendance-frontend-wbsb.onrender.com
       - key: ADMIN_EMAIL
         value: admin@smartattendance.com
       - key: ADMIN_PASSWORD

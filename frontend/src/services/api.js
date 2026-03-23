@@ -62,12 +62,20 @@ api.interceptors.response.use(
   (error) => {
     const requestUrl = error?.config?.url || '';
     const skipAutoRedirect = isAuthErrorWhitelistedPath(requestUrl);
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath === '/login' || currentPath === '/register';
 
-    if (error.response?.status === 401 && !skipAutoRedirect) {
+    if (error.response?.status === 401 && !skipAutoRedirect && !isAuthPage) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+
     return Promise.reject(error);
   }
 );
