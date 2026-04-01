@@ -260,7 +260,19 @@ export const getStudentAttendance = () =>
 
 export const getActiveSessions = () => resolved({ sessions: [] });
 
-export const getTeacherSubjects = () => resolved({ subjects: [] });
+export const getTeacherSubjects = () =>
+  api.get('/teacher/subjects').then((res) => ({
+    ...res,
+    data: {
+      subjects: (res.data?.subjects || []).map((s) => ({
+        id: s.id,
+        code: s.code,
+        name: s.name,
+        department: s.department,
+        semester: s.semester,
+      })),
+    },
+  })).catch(() => resolved({ subjects: [] }));
 
 export const getTeacherSessions = () =>
   getTeacherAttendanceRecords().then((res) => ({
@@ -339,8 +351,32 @@ export const getSubjects = (params = {}) =>
 export const createTeacher = (payload) =>
   api.post('/admin/teachers', payload);
 
+export const editTeacher = (teacherId, payload) =>
+  api.patch(`/admin/teachers/${teacherId}`, payload);
+
+export const deleteTeacher = (teacherId) =>
+  api.delete(`/admin/teachers/${teacherId}`);
+
 export const createSubject = (payload) =>
   api.post('/admin/subjects', payload);
+
+export const editSubject = (subjectId, payload) =>
+  api.patch(`/admin/subjects/${subjectId}`, payload);
+
+export const deleteSubject = (subjectId) =>
+  api.delete(`/admin/subjects/${subjectId}`);
+
+export const assignTeacherToSubject = (subjectId, teacherId) =>
+  api.post(`/admin/subjects/${subjectId}/assign-teacher`, { teacher_id: teacherId });
+
+export const unassignTeacherFromSubject = (subjectId) =>
+  api.post(`/admin/subjects/${subjectId}/unassign-teacher`);
+
+export const editStudent = (studentId, payload) =>
+  api.patch(`/admin/students/${studentId}`, payload);
+
+export const deleteStudent = (studentId) =>
+  api.delete(`/admin/students/${studentId}`);
 
 export const overrideAttendance = (updates) =>
   bulkUpdateAttendance(updates);

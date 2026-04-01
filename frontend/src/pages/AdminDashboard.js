@@ -3,9 +3,10 @@ import { Routes, Route } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../App';
 import {
-  getAdminDashboard, getStudents, getTeachers, createTeacher,
-  createSubject, getSubjects, overrideAttendance, exportExcel,
+  getAdminDashboard, getStudents, getTeachers, createTeacher, editTeacher, deleteTeacher,
+  createSubject, getSubjects, overrideAttendance, exportExcel, editSubject, deleteSubject,
   exportGoogleSheets, getDefaulters, toggleUser, getDepartments, updateAdminCredentials,
+  editStudent, deleteStudent, assignTeacherToSubject, unassignTeacherFromSubject,
 } from '../services/api';
 
 function AdminDashboard() {
@@ -44,6 +45,8 @@ function AdminHome() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [editingItem, setEditingItem] = useState(null);
+  const [editingType, setEditingType] = useState(null);
 
   useEffect(() => { loadDashboard(); }, []);
 
@@ -210,6 +213,39 @@ function AdminHome() {
     }
   };
 
+  const handleDeleteTeacher = async (teacherId) => {
+    setError('');
+    try {
+      await deleteTeacher(teacherId);
+      setSuccess('Teacher deleted successfully');
+      loadTeachers();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete teacher');
+    }
+  };
+
+  const handleDeleteStudent = async (studentId) => {
+    setError('');
+    try {
+      await deleteStudent(studentId);
+      setSuccess('Student deleted successfully');
+      loadStudents();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete student');
+    }
+  };
+
+  const handleDeleteSubject = async (subjectId) => {
+    setError('');
+    try {
+      await deleteSubject(subjectId);
+      setSuccess('Subject deleted successfully');
+      loadSubjects();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete subject');
+    }
+  };
+
   return (
     <>
       {/* Tab Navigation */}
@@ -318,10 +354,14 @@ function AdminHome() {
                     <td>{s.department}</td>
                     <td>Sem {s.semester}</td>
                     <td>{s.phone}</td>
-                    <td>
-                      <button className="btn btn-secondary btn-sm"
-                        onClick={() => handleToggleUser(s.user_id)}>
-                        Toggle
+                    <td style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn btn-primary btn-sm"
+                        onClick={() => { setEditingItem(s); setEditingType('student'); setShowModal('edit-student'); }}>
+                        Edit
+                      </button>
+                      <button className="btn btn-danger btn-sm"
+                        onClick={() => { if (window.confirm('Delete this student?')) { handleDeleteStudent(s.id); } }}>
+                        Delete
                       </button>
                     </td>
                   </tr>
@@ -347,7 +387,7 @@ function AdminHome() {
           <div className="table-container">
             <table className="table">
               <thead>
-                <tr><th>Employee ID</th><th>Name</th><th>Department</th><th>Designation</th></tr>
+                <tr><th>Employee ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Actions</th></tr>
               </thead>
               <tbody>
                 {teachers.map(t => (
@@ -356,10 +396,20 @@ function AdminHome() {
                     <td>{t.full_name}</td>
                     <td>{t.department}</td>
                     <td>{t.designation}</td>
+                    <td style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn btn-primary btn-sm"
+                        onClick={() => { setEditingItem(t); setEditingType('teacher'); setShowModal('edit-teacher'); }}>
+                        Edit
+                      </button>
+                      <button className="btn btn-danger btn-sm"
+                        onClick={() => { if (window.confirm('Delete this teacher?')) { handleDeleteTeacher(t.id); } }}>
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {teachers.length === 0 && (
-                  <tr><td colSpan="4" className="text-center text-muted" style={{ padding: 20 }}>No teachers yet</td></tr>
+                  <tr><td colSpan="5" className="text-center text-muted" style={{ padding: 20 }}>No teachers yet</td></tr>
                 )}
               </tbody>
             </table>
@@ -379,7 +429,7 @@ function AdminHome() {
           <div className="table-container">
             <table className="table">
               <thead>
-                <tr><th>Code</th><th>Name</th><th>Department</th><th>Semester</th><th>Teacher</th></tr>
+                <tr><th>Code</th><th>Name</th><th>Department</th><th>Semester</th><th>Teacher</th><th>Actions</th></tr>
               </thead>
               <tbody>
                 {subjects.map(s => (
@@ -389,10 +439,24 @@ function AdminHome() {
                     <td>{s.department}</td>
                     <td>Sem {s.semester}</td>
                     <td>{s.teacher_name || 'Unassigned'}</td>
+                    <td style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      <button className="btn btn-primary btn-sm"
+                        onClick={() => { setEditingItem(s); setEditingType('subject'); setShowModal('edit-subject'); }}>
+                        Edit
+                      </button>
+                      <button className="btn btn-info btn-sm"
+                        onClick={() => { setEditingItem(s); setShowModal('assign-teacher'); }}>
+                        Assign
+                      </button>
+                      <button className="btn btn-danger btn-sm"
+                        onClick={() => { if (window.confirm('Delete this subject?')) { handleDeleteSubject(s.id); } }}>
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {subjects.length === 0 && (
-                  <tr><td colSpan="5" className="text-center text-muted" style={{ padding: 20 }}>No subjects yet</td></tr>
+                  <tr><td colSpan="6" className="text-center text-muted" style={{ padding: 20 }}>No subjects yet</td></tr>
                 )}
               </tbody>
             </table>
@@ -551,12 +615,54 @@ function AdminHome() {
         />
       )}
 
+      {/* Edit Teacher Modal */}
+      {showModal === 'edit-teacher' && editingItem && (
+        <EditTeacherModal
+          teacher={editingItem}
+          onClose={() => { setShowModal(null); setEditingItem(null); }}
+          onSuccess={() => { setShowModal(null); setEditingItem(null); loadTeachers(); setSuccess('Teacher updated successfully'); }}
+          setError={setError}
+        />
+      )}
+
       {/* Add Subject Modal */}
       {showModal === 'subject' && (
         <CreateSubjectModal
           teachers={teachers}
           onClose={() => setShowModal(null)}
           onSuccess={() => { setShowModal(null); loadSubjects(); setSuccess('Subject created successfully'); }}
+          setError={setError}
+        />
+      )}
+
+      {/* Edit Subject Modal */}
+      {showModal === 'edit-subject' && editingItem && (
+        <EditSubjectModal
+          subject={editingItem}
+          teachers={teachers}
+          onClose={() => { setShowModal(null); setEditingItem(null); }}
+          onSuccess={() => { setShowModal(null); setEditingItem(null); loadSubjects(); setSuccess('Subject updated successfully'); }}
+          setError={setError}
+        />
+      )}
+
+      {/* Edit Student Modal */}
+      {showModal === 'edit-student' && editingItem && (
+        <EditStudentModal
+          student={editingItem}
+          onClose={() => { setShowModal(null); setEditingItem(null); }}
+          onSuccess={() => { setShowModal(null); setEditingItem(null); loadStudents(); setSuccess('Student updated successfully'); }}
+          setError={setError}
+        />
+      )}
+
+      {/* Assign Teacher to Subject Modal */}
+      {showModal === 'assign-teacher' && editingItem && (
+        <AssignTeacherModal
+          subject={editingItem}
+          teachers={teachers}
+          onClose={() => { setShowModal(null); setEditingItem(null); }}
+          onSuccess={() => { setShowModal(null); setEditingItem(null); loadSubjects(); setSuccess('Teacher assigned successfully'); }}
           setError={setError}
         />
       )}
@@ -730,6 +836,303 @@ function CreateSubjectModal({ teachers, onClose, onSuccess, setError }) {
             <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
               {loading ? 'Creating...' : 'Create Subject'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditTeacherModal({ teacher, onClose, onSuccess, setError }) {
+  const [form, setForm] = useState({
+    full_name: teacher.full_name || '',
+    department: teacher.department || '',
+    designation: teacher.designation || '',
+    phone: '',
+    email: '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await editTeacher(teacher.id, form);
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update teacher');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const departments = [
+    'Computer Science', 'Information Technology', 'Electronics',
+    'Electrical', 'Mechanical', 'Civil', 'Chemical', 'Biotechnology',
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3 className="modal-title">Edit Teacher</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
+            <input type="text" className="form-input" value={form.full_name}
+              onChange={e => setForm({...form, full_name: e.target.value})} />
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Department</label>
+              <select className="form-select" value={form.department}
+                onChange={e => setForm({...form, department: e.target.value})}>
+                <option value="">Select</option>
+                {departments.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Designation</label>
+              <input type="text" className="form-input" value={form.designation}
+                onChange={e => setForm({...form, designation: e.target.value})} />
+            </div>
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Phone</label>
+              <input type="tel" className="form-input" value={form.phone}
+                onChange={e => setForm({...form, phone: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input type="email" className="form-input" value={form.email}
+                onChange={e => setForm({...form, email: e.target.value})} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+              {loading ? 'Updating...' : 'Update Teacher'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditSubjectModal({ subject, teachers, onClose, onSuccess, setError }) {
+  const [form, setForm] = useState({
+    name: subject.name || '',
+    code: subject.code || '',
+    department: subject.department || '',
+    semester: subject.semester || '',
+    teacher_id: subject.teacher_id || '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await editSubject(subject.id, {
+        ...form,
+        teacher_id: form.teacher_id || null,
+      });
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update subject');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const departments = [
+    'Computer Science', 'Information Technology', 'Electronics',
+    'Electrical', 'Mechanical', 'Civil', 'Chemical', 'Biotechnology',
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3 className="modal-title">Edit Subject</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Subject Name</label>
+            <input type="text" className="form-input" value={form.name}
+              onChange={e => setForm({...form, name: e.target.value})} />
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Subject Code</label>
+              <input type="text" className="form-input" value={form.code}
+                onChange={e => setForm({...form, code: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Semester</label>
+              <select className="form-select" value={form.semester}
+                onChange={e => setForm({...form, semester: e.target.value})}>
+                <option value="">Select</option>
+                {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Department</label>
+            <select className="form-select" value={form.department}
+              onChange={e => setForm({...form, department: e.target.value})}>
+              <option value="">Select</option>
+              {departments.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Assign Teacher</label>
+            <select className="form-select" value={form.teacher_id}
+              onChange={e => setForm({...form, teacher_id: e.target.value})}>
+              <option value="">Unassigned</option>
+              {teachers.map(t => (
+                <option key={t.id} value={t.id}>{t.full_name} ({t.employee_id})</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+              {loading ? 'Updating...' : 'Update Subject'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditStudentModal({ student, onClose, onSuccess, setError }) {
+  const [form, setForm] = useState({
+    full_name: student.full_name || '',
+    department: student.department || '',
+    semester: student.semester || '',
+    roll_number: student.roll_number || '',
+    phone: student.phone || '',
+    email: '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await editStudent(student.id, form);
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update student');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const departments = [
+    'Computer Science', 'Information Technology', 'Electronics',
+    'Electrical', 'Mechanical', 'Civil', 'Chemical', 'Biotechnology',
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3 className="modal-title">Edit Student</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
+            <input type="text" className="form-input" value={form.full_name}
+              onChange={e => setForm({...form, full_name: e.target.value})} />
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Roll Number</label>
+              <input type="text" className="form-input" value={form.roll_number}
+                onChange={e => setForm({...form, roll_number: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Department</label>
+              <select className="form-select" value={form.department}
+                onChange={e => setForm({...form, department: e.target.value})}>
+                <option value="">Select</option>
+                {departments.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Semester</label>
+              <select className="form-select" value={form.semester}
+                onChange={e => setForm({...form, semester: e.target.value})}>
+                <option value="">Select</option>
+                {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Phone</label>
+              <input type="tel" className="form-input" value={form.phone}
+                onChange={e => setForm({...form, phone: e.target.value})} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input type="email" className="form-input" value={form.email}
+              onChange={e => setForm({...form, email: e.target.value})} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+              {loading ? 'Updating...' : 'Update Student'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AssignTeacherModal({ subject, teachers, onClose, onSuccess, setError }) {
+  const [selectedTeacherId, setSelectedTeacherId] = useState(subject.teacher_id || '');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedTeacherId) {
+      setError('Please select a teacher');
+      return;
+    }
+    setLoading(true);
+    try {
+      await assignTeacherToSubject(subject.id, selectedTeacherId);
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to assign teacher');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3 className="modal-title">Assign Teacher to {subject.name}</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Select Teacher *</label>
+            <select className="form-select" value={selectedTeacherId}
+              onChange={e => setSelectedTeacherId(e.target.value)} required>
+              <option value="">-- Select Teacher --</option>
+              {teachers.map(t => (
+                <option key={t.id} value={t.id}>{t.full_name} ({t.employee_id})</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+              {loading ? 'Assigning...' : 'Assign Teacher'}
             </button>
           </div>
         </form>

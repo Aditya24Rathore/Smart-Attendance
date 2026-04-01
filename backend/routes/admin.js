@@ -202,6 +202,110 @@ router.post('/teachers', verifyToken, requireRole('admin', 'hod'), [
 });
 
 /**
+ * PATCH /api/admin/teachers/:teacherId
+ * Update teacher information
+ */
+router.patch('/teachers/:teacherId', verifyToken, requireRole('admin', 'hod'), [
+  body('full_name').optional().notEmpty().withMessage('Full name cannot be empty'),
+  body('department').optional().notEmpty().withMessage('Department cannot be empty'),
+  body('designation').optional(),
+  body('phone').optional(),
+  body('email').optional().isEmail().withMessage('Valid email is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { teacherId } = req.params;
+    const { full_name, department, designation, phone, email } = req.body;
+
+    const teacher = await Teacher.findById(teacherId).populate('userId');
+    if (!teacher) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+
+    const updateData = {};
+    if (full_name) updateData.fullName = full_name;
+    if (department) {
+      updateData.department = department;
+      updateData.branch = department;
+    }
+    if (designation) updateData.designation = designation;
+    if (phone) updateData.phone = phone;
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const existingEmail = await User.findOne({ email: normalizedEmail, _id: { $ne: teacher.userId._id } });
+      if (existingEmail) {
+        return res.status(409).json({ error: 'Email already in use' });
+      }
+      updateData.email = normalizedEmail;
+    }
+
+    // Update user information
+    if (Object.keys(updateData).length > 0) {
+      await User.findByIdAndUpdate(teacher.userId._id, updateData);
+    }
+
+    // Update teacher information
+    const teacherUpdateData = {};
+    if (department) teacherUpdateData.department = department;
+    if (designation) teacherUpdateData.designation = designation;
+
+    if (Object.keys(teacherUpdateData).length > 0) {
+      await Teacher.findByIdAndUpdate(teacherId, teacherUpdateData);
+    }
+
+    const updatedTeacher = await Teacher.findById(teacherId).populate('userId');
+
+    res.json({
+      success: true,
+      message: 'Teacher updated successfully',
+      teacher: updatedTeacher,
+    });
+  } catch (error) {
+    console.error('Error updating teacher:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/admin/teachers/:teacherId
+ * Delete teacher and associated user account
+ */
+router.delete('/teachers/:teacherId', verifyToken, requireRole('admin', 'hod'), async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    const teacher = await Teacher.findById(teacherId);
+    if (!teacher) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+
+    // Remove teacher from all subjects
+    await Subject.updateMany(
+      { $or: [{ teacherId: teacher._id }, { assignedTeachers: teacher._id }] },
+      { $pull: { assignedTeachers: teacher._id }, $unset: { teacherId: true } }
+    );
+
+    // Delete the teacher profile
+    await Teacher.findByIdAndDelete(teacherId);
+
+    // Delete the user account
+    await User.findByIdAndDelete(teacher.userId);
+
+    res.json({
+      success: true,
+      message: 'Teacher deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting teacher:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/admin/subjects
  * List subjects with optional department filter
  */
@@ -288,6 +392,232 @@ router.post('/subjects', verifyToken, requireRole('admin', 'hod'), [
     });
   } catch (error) {
     console.error('Error creating subject:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PATCH /api/admin/subjects/:subjectId
+ * Update subject information
+ */
+router.patch('/subjects/:subjectId', verifyToken, requireRole('admin', 'hod'), [
+  body('name').optional().notEmpty().withMessage('Subject name cannot be empty'),
+  body('code').optional().notEmpty().withMessage('Subject code cannot be empty'),
+  body('department').optional().notEmpty().withMessage('Department cannot be empty'),
+  body('semester').optional().isInt({ min: 1, max: 8 }).withMessage('Semester must be between 1 and 8'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { subjectId } = req.params;
+    const { name, code, department, semester, teacher_id } = req.body;
+
+    const subject = await Subject.findById(subjectId);
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    const updateData = {};
+    
+    if (name) updateData.subjectName = name;
+    if (code) {
+      const normalizedCode = String(code).trim().toUpperCase();
+      const existingCode = await Subject.findOne({ subjectCode: normalizedCode, _id: { $ne: subjectId } });
+      if (existingCode) {
+        return res.status(409).json({ error: 'Subject code already exists' });
+      }
+      updateData.subjectCode = normalizedCode;
+    }
+    if (department) updateData.department = department;
+    if (semester) updateData.semester = parseInt(semester, 10);
+
+    // Handle teacher assignment
+    if (teacher_id !== undefined) {
+      if (teacher_id) {
+        const teacher = await Teacher.findById(teacher_id);
+        if (!teacher) {
+          return res.status(404).json({ error: 'Assigned teacher not found' });
+        }
+        
+        // Remove from old teacher's assigned subjects
+        if (subject.teacherId) {
+          await Teacher.findByIdAndUpdate(subject.teacherId, {
+            $pull: { assignedSubjects: subject._id },
+          });
+        }
+        
+        updateData.teacherId = teacher_id;
+        updateData.assignedTeachers = [teacher_id];
+        
+        // Add to new teacher's assigned subjects
+        await Teacher.findByIdAndUpdate(teacher_id, {
+          $addToSet: { assignedSubjects: subject._id },
+        });
+      } else {
+        // Unassign teacher
+        if (subject.teacherId) {
+          await Teacher.findByIdAndUpdate(subject.teacherId, {
+            $pull: { assignedSubjects: subject._id },
+          });
+        }
+        updateData.teacherId = null;
+        updateData.assignedTeachers = [];
+      }
+    }
+
+    const updatedSubject = await Subject.findByIdAndUpdate(subjectId, updateData, { new: true })
+      .populate({ path: 'teacherId', populate: { path: 'userId' } });
+
+    res.json({
+      success: true,
+      message: 'Subject updated successfully',
+      subject: updatedSubject,
+    });
+  } catch (error) {
+    console.error('Error updating subject:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/admin/subjects/:subjectId
+ * Delete subject
+ */
+router.delete('/subjects/:subjectId', verifyToken, requireRole('admin', 'hod'), async (req, res) => {
+  try {
+    const { subjectId } = req.params;
+
+    const subject = await Subject.findById(subjectId);
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    // Remove subject from all teachers' assigned subjects
+    if (subject.teacherId) {
+      await Teacher.findByIdAndUpdate(subject.teacherId, {
+        $pull: { assignedSubjects: subject._id },
+      });
+    }
+
+    subject.assignedTeachers.forEach(async (teacherId) => {
+      await Teacher.findByIdAndUpdate(teacherId, {
+        $pull: { assignedSubjects: subject._id },
+      });
+    });
+
+    // Delete the subject
+    await Subject.findByIdAndDelete(subjectId);
+
+    res.json({
+      success: true,
+      message: 'Subject deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting subject:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/admin/subjects/:subjectId/assign-teacher
+ * Assign teacher to subject (admin can assign subjects later)
+ */
+router.post('/subjects/:subjectId/assign-teacher', verifyToken, requireRole('admin', 'hod'), [
+  body('teacher_id').notEmpty().withMessage('Teacher ID is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { subjectId } = req.params;
+    const { teacher_id } = req.body;
+
+    const subject = await Subject.findById(subjectId);
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    const teacher = await Teacher.findById(teacher_id);
+    if (!teacher) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+
+    // Remove subject from old teacher if any
+    if (subject.teacherId && String(subject.teacherId) !== String(teacher_id)) {
+      await Teacher.findByIdAndUpdate(subject.teacherId, {
+        $pull: { assignedSubjects: subject._id },
+      });
+    }
+
+    // Update subject with new teacher
+    subject.teacherId = teacher_id;
+    if (!subject.assignedTeachers.includes(teacher_id)) {
+      subject.assignedTeachers.push(teacher_id);
+    }
+    await subject.save();
+
+    // Add subject to teacher's assigned subjects
+    await Teacher.findByIdAndUpdate(teacher_id, {
+      $addToSet: { assignedSubjects: subject._id },
+    });
+
+    const updatedSubject = await Subject.findById(subjectId)
+      .populate({ path: 'teacherId', populate: { path: 'userId' } });
+
+    res.json({
+      success: true,
+      message: 'Teacher assigned to subject successfully',
+      subject: updatedSubject,
+    });
+  } catch (error) {
+    console.error('Error assigning teacher to subject:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/admin/subjects/:subjectId/unassign-teacher
+ * Remove teacher from subject
+ */
+router.post('/subjects/:subjectId/unassign-teacher', verifyToken, requireRole('admin', 'hod'), async (req, res) => {
+  try {
+    const { subjectId } = req.params;
+
+    const subject = await Subject.findById(subjectId);
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    // Remove subject from all teachers
+    if (subject.teacherId) {
+      await Teacher.findByIdAndUpdate(subject.teacherId, {
+        $pull: { assignedSubjects: subject._id },
+      });
+    }
+
+    subject.assignedTeachers.forEach(async (teacherId) => {
+      await Teacher.findByIdAndUpdate(teacherId, {
+        $pull: { assignedSubjects: subject._id },
+      });
+    });
+
+    // Clear teacher assignment
+    subject.teacherId = null;
+    subject.assignedTeachers = [];
+    await subject.save();
+
+    res.json({
+      success: true,
+      message: 'Teacher unassigned from subject successfully',
+      subject,
+    });
+  } catch (error) {
+    console.error('Error unassigning teacher from subject:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -499,6 +829,104 @@ router.get('/students', verifyToken, requireRole('admin', 'hod'), async (req, re
     });
   } catch (error) {
     console.error('Error fetching students:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PATCH /api/admin/students/:studentId
+ * Update student information
+ */
+router.patch('/students/:studentId', verifyToken, requireRole('admin', 'hod'), [
+  body('full_name').optional().notEmpty().withMessage('Full name cannot be empty'),
+  body('department').optional().notEmpty().withMessage('Department cannot be empty'),
+  body('semester').optional().isInt({ min: 1, max: 8 }).withMessage('Semester must be between 1 and 8'),
+  body('roll_number').optional(),
+  body('phone').optional(),
+  body('email').optional().isEmail().withMessage('Valid email is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { studentId } = req.params;
+    const { full_name, department, semester, roll_number, phone, email } = req.body;
+
+    const student = await Student.findById(studentId).populate('userId');
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const updateData = {};
+    if (full_name) updateData.fullName = full_name;
+    if (phone) updateData.phone = phone;
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const existingEmail = await User.findOne({ email: normalizedEmail, _id: { $ne: student.userId._id } });
+      if (existingEmail) {
+        return res.status(409).json({ error: 'Email already in use' });
+      }
+      updateData.email = normalizedEmail;
+    }
+
+    // Update user information
+    if (Object.keys(updateData).length > 0) {
+      await User.findByIdAndUpdate(student.userId._id, updateData);
+    }
+
+    // Update student information
+    const studentUpdateData = {};
+    if (department) studentUpdateData.department = department;
+    if (semester) studentUpdateData.semester = parseInt(semester, 10);
+    if (roll_number) studentUpdateData.rollNumber = roll_number;
+
+    if (Object.keys(studentUpdateData).length > 0) {
+      await Student.findByIdAndUpdate(studentId, studentUpdateData);
+    }
+
+    const updatedStudent = await Student.findById(studentId).populate('userId');
+
+    res.json({
+      success: true,
+      message: 'Student updated successfully',
+      student: updatedStudent,
+    });
+  } catch (error) {
+    console.error('Error updating student:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/admin/students/:studentId
+ * Delete student and associated user account
+ */
+router.delete('/students/:studentId', verifyToken, requireRole('admin', 'hod'), async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    // Delete attendance records for this student
+    await Attendance.deleteMany({ studentId: student._id });
+
+    // Delete the student profile
+    await Student.findByIdAndDelete(studentId);
+
+    // Delete the user account
+    await User.findByIdAndDelete(student.userId);
+
+    res.json({
+      success: true,
+      message: 'Student deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting student:', error);
     res.status(500).json({ error: error.message });
   }
 });

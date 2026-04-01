@@ -1,6 +1,6 @@
 const express = require('express');
 const { verifyToken, requireRole } = require('../middleware/auth');
-const { Teacher, Attendance, QRCode } = require('../models');
+const { Teacher, Attendance, QRCode, Subject } = require('../models');
 const QRService = require('../services/QRService');
 const router = express.Router();
 
@@ -35,6 +35,41 @@ router.get('/dashboard', verifyToken, requireRole('teacher'), async (req, res) =
     });
   } catch (error) {
     console.error('Error fetching dashboard:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/teacher/subjects
+ * Get subjects assigned to the teacher
+ */
+router.get('/subjects', verifyToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const teacher = await Teacher.findOne({ userId: req.userId });
+    if (!teacher) {
+      return res.status(404).json({ error: 'Teacher profile not found' });
+    }
+
+    const subjects = await Subject.find({
+      $or: [
+        { teacherId: teacher._id },
+        { assignedTeachers: teacher._id },
+      ],
+      isActive: true,
+    }).sort({ subjectCode: 1 });
+
+    res.json({
+      success: true,
+      subjects: subjects.map(s => ({
+        id: s._id,
+        code: s.subjectCode,
+        name: s.subjectName,
+        department: s.department,
+        semester: s.semester,
+      })),
+    });
+  } catch (error) {
+    console.error('Error fetching subjects:', error);
     res.status(500).json({ error: error.message });
   }
 });
