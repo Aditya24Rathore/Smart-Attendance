@@ -343,6 +343,7 @@ export const getSubjects = (params = {}) =>
       name: item.subjectName,
       department: item.department,
       semester: item.semester,
+      teacher_id: item.teacherId?._id || null,
       teacher_name: item.teacherId?.userId?.fullName || null,
     }));
     return { ...res, data: { ...res.data, subjects } };

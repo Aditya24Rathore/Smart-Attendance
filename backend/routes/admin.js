@@ -556,9 +556,15 @@ router.post('/subjects/:subjectId/assign-teacher', verifyToken, requireRole('adm
 
     // Update subject with new teacher
     subject.teacherId = teacher_id;
-    if (!subject.assignedTeachers.includes(teacher_id)) {
+    
+    // Ensure assignedTeachers is an array and add teacher if not already present
+    if (!Array.isArray(subject.assignedTeachers)) {
+      subject.assignedTeachers = [];
+    }
+    if (!subject.assignedTeachers.includes(String(teacher_id))) {
       subject.assignedTeachers.push(teacher_id);
     }
+    
     await subject.save();
 
     // Add subject to teacher's assigned subjects

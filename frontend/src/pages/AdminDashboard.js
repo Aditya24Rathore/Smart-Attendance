@@ -1094,7 +1094,7 @@ function EditStudentModal({ student, onClose, onSuccess, setError }) {
 }
 
 function AssignTeacherModal({ subject, teachers, onClose, onSuccess, setError }) {
-  const [selectedTeacherId, setSelectedTeacherId] = useState(subject.teacher_id || '');
+  const [selectedTeacherId, setSelectedTeacherId] = useState(subject?.teacher_id || '');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -1108,7 +1108,9 @@ function AssignTeacherModal({ subject, teachers, onClose, onSuccess, setError })
       await assignTeacherToSubject(subject.id, selectedTeacherId);
       onSuccess();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to assign teacher');
+      console.error('Assign teacher error:', err);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to assign teacher';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -1117,7 +1119,7 @@ function AssignTeacherModal({ subject, teachers, onClose, onSuccess, setError })
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
-        <h3 className="modal-title">Assign Teacher to {subject.name}</h3>
+        <h3 className="modal-title">Assign Teacher to {subject?.name}</h3>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Select Teacher *</label>
