@@ -154,6 +154,39 @@ router.get('/attendance-history', verifyToken, requireRole('student'), async (re
   } catch (error) {
     console.error('Error fetching attendance history:', error);
     res.status(500).json({ error: error.message });
+/**
+ * GET /api/student/generate-qr
+ * Generate and get student's personal QR code
+ */
+router.get('/generate-qr', verifyToken, requireRole('student'), async (req, res) => {
+  try {
+    const user = await require('../models').User.findById(req.userId);
+    const student = await Student.findOne({ userId: req.userId });
+    if (!student) {
+      return res.status(404).json({ error: 'Student profile not found' });
+    }
+
+    // Generate student QR code
+    const studentData = {
+      ...student.toObject(),
+      fullName: user?.fullName || student.enrollmentNo,
+    };
+
+    const qrCode = await QRService.generateStudentQRCode(studentData);
+
+    res.json({
+      success: true,
+      message: 'Student QR code generated',
+      qrCode: {
+        qrHash: qrCode.qrHash,
+        qrImage: qrCode.qrImage,
+        enrollmentNo: student.enrollmentNo,
+        fullName: user?.fullName || student.enrollmentNo,
+      },
+    });
+  } catch (error) {
+    console.error('Error generating student QR:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

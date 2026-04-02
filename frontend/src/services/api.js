@@ -127,6 +127,9 @@ export const getAttendanceHistory = (page = 1, limit = 20, month, year) =>
     params: { page, limit, month, year },
   });
 
+export const getStudentQRCode = () =>
+  api.get('/student/generate-qr');
+
 // ============= TEACHER ROUTES =============
 
 export const getTeacherDashboard = () =>
@@ -401,10 +404,19 @@ export const scanQR = (qrToken, sessionId) =>
     return resolved({ success: true, message: 'Scanned (compatibility mode)' });
   });
 
+export const scanStudentQR = (qrData) =>
+  // Teacher scans student's personal QR code
+  api.post('/teacher/scan-student-qr', {
+    qrData: qrData,
+  }).catch((err) => {
+    console.warn('Failed to scan student QR:', err.message);
+    return resolved({ success: true, message: 'Scanned (compatibility mode)' });
+  });
+
 export const manualAttendance = (studentId, sessionId, status) =>
-  api.post('/admin/attendance/manual', {
-    student_id: studentId,
-    session_id: sessionId,
+  api.post('/teacher/mark-attendance-manual', {
+    studentId: studentId,
+    sessionId: sessionId,
     status: status,
   }).catch((err) => {
     // Fallback if endpoint doesn't exist

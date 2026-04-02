@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import QRCodeDisplay from '../components/QRCodeDisplay';
+import StudentQRDisplay from '../components/StudentQRDisplay';
 import { useAuth } from '../App';
 import { getAttendanceSummary, getStudentAttendance, getActiveSessions } from '../services/api';
 
@@ -60,9 +60,7 @@ function StudentHome() {
       </div>
 
       {tab === 'qr' && (
-        <div className="card">
-          <QRCodeDisplay studentData={studentData} />
-        </div>
+        <StudentQRDisplay studentData={studentData} />
       )}
 
       {tab === 'attendance' && summary && (

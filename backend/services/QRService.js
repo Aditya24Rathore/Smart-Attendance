@@ -121,6 +121,51 @@ class QRService {
     const elapsed = Date.now() - generatedAt.getTime();
     return elapsed > this.refreshInterval * 0.8; // Refresh at 80% of interval
   }
+
+  /**
+   * Generate student QR code (static, contains enrollment info)
+   */
+  async generateStudentQRCode(student) {
+    try {
+      // Create QR data with student identification
+      const qrData = {
+        type: 'student',
+        enrollmentNo: student.enrollmentNo,
+        studentId: student._id.toString(),
+        fullName: student.fullName || 'Unknown',
+        department: student.department,
+      };
+
+      // For student QR, we use the enrollment number as the hash (simple and scannable)
+      const qrHash = student.enrollmentNo;
+      const qrContent = JSON.stringify(qrData);
+
+      // Generate QR code image directly with plaintext data
+      const qrImage = await qrcode.toDataURL(qrContent);
+
+      return {
+        qrHash,
+        qrContent,
+        qrImage,
+        generatedAt: new Date(),
+        expiresAt: null, // Student QR codes don't expire
+      };
+    } catch (error) {
+      console.error('Student QR Code Generation Error:', error);
+      throw new Error('Failed to generate student QR code');
+    }
+  }
+
+  /**
+   * Decode student QR data (simple JSON parsing)
+   */
+  decodeStudentQRData(qrContent) {
+    try {
+      return JSON.parse(qrContent);
+    } catch (error) {
+      throw new Error('Invalid student QR data');
+    }
+  }
 }
 
 module.exports = new QRService();

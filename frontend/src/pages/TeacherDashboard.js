@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import QRScanner from '../components/QRScanner';
+import StudentQRScanner from '../components/StudentQRScanner';
 import { useAuth } from '../App';
 import {
-  getTeacherSubjects, startSession, endSession, scanQR,
+  getTeacherSubjects, startSession, endSession,
   getSessionAttendance, getTeacherSessions, manualAttendance,
 } from '../services/api';
 
@@ -98,18 +98,14 @@ function TeacherHome() {
     }
   };
 
-  const handleScan = useCallback(async (qrToken) => {
-    if (!activeSession) {
-      setScanResult({ type: 'error', message: 'No active session. Start a session first.' });
-      return;
-    }
-    setScanResult(null);
-    try {
-      const res = await scanQR(qrToken, activeSession.id);
-      setScanResult({ type: 'success', message: res.data.message });
-      loadAttendance(activeSession.id);
-    } catch (err) {
-      setScanResult({ type: 'error', message: err.response?.data?.error || 'Scan failed' });
+  const handleScanSuccess = useCallback((result) => {
+    if (result?.student) {
+      setScanResult({ 
+        type: 'success', 
+        message: `✅ ${result.student.name} - Marked Present`,
+        student: result.student
+      });
+      loadAttendance(activeSession?.id);
     }
   }, [activeSession]);
 
@@ -182,24 +178,31 @@ function TeacherHome() {
 
       {/* QR Scanner Tab */}
       {tab === 'scan' && (
-        <div className="card">
+        <>
           {!activeSession ? (
-            <div className="empty-state">
-              <div className="icon">📸</div>
-              <h3>Start a Session First</h3>
-              <p>You need to start a class session before scanning QR codes</p>
+            <div className="card">
+              <div className="empty-state">
+                <div className="icon">📸</div>
+                <h3>Start a Session First</h3>
+                <p>You need to start a class session before scanning student QR codes</p>
+              </div>
             </div>
           ) : (
             <>
-              <QRScanner onScan={handleScan} isActive={tab === 'scan' && !!activeSession} />
+              <StudentQRScanner onScanSuccess={handleScanSuccess} sessionData={activeSession} />
               {scanResult && (
-                <div className={`scan-result ${scanResult.type}`}>
-                  {scanResult.type === 'success' ? '✅' : '❌'} {scanResult.message}
+                <div className={`alert alert-${scanResult.type}`} style={{ marginTop: '20px' }}>
+                  <strong>{scanResult.message}</strong>
+                  {scanResult.student && (
+                    <div style={{ marginTop: '8px', fontSize: '14px' }}>
+                      <p>ID: {scanResult.student.enrollmentNo}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </>
           )}
-        </div>
+        </>
       )}
 
       {/* Attendance List Tab */}
