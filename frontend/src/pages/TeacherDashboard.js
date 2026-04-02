@@ -222,18 +222,18 @@ function TeacherHome() {
           ) : (
             <div className="attendance-list">
               {attendance.students.map((item) => (
-                <div key={item.student.id} className="attendance-item">
+                <div key={item.id} className="attendance-item">
                   <div className="student-info">
-                    <span className="student-name">{item.student.full_name}</span>
-                    <span className="student-roll">{item.student.roll_number}</span>
+                    <span className="student-name">{item.full_name}</span>
+                    <span className="student-roll">{item.roll_number || item.enrollmentNo}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <span className={`badge badge-${item.status === 'not_marked' ? 'absent' : item.status}`}>
-                      {item.status === 'not_marked' ? 'Pending' : item.status}
+                    <span className={`badge badge-${item.status === 'absent' ? 'absent' : 'present'}`}>
+                      {item.status}
                     </span>
                     {activeSession && item.status !== 'present' && (
                       <button className="btn btn-success btn-sm"
-                        onClick={() => handleManualAttendance(item.student.id, 'present')}
+                        onClick={() => handleManualAttendance(item.id, 'present')}
                         title="Mark Present">
                         ✓
                       </button>

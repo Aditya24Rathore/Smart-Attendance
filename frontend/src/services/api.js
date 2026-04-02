@@ -229,11 +229,14 @@ export const logout = () => {
   return api.post('/auth/logout').catch(() => resolved({ success: true }));
 };
 
-export const generateQRToken = () => {
-  // Generate a simple token that students can use for attendance
-  // The actual QR code is generated on the client side using the student ID and timestamp
-  const payload = `student-token-${Date.now()}`;
-  return resolved({ qr_token: payload });
+export const generateQRToken = (studentData = {}) => {
+  // Generate QR token with student enrollment number for easy scanning
+  // The token can be decoded by the teacher when scanning
+  const enrollmentNo = studentData?.enrollmentNo || studentData?.roll_number || 'unknown';
+  const timestamp = Date.now();
+  // Create a token that includes student identification
+  const token = `${enrollmentNo}::${timestamp}`;
+  return resolved({ qr_token: token });
 };
 
 export const getAttendanceSummary = () =>
@@ -367,26 +370,19 @@ export const startSession = (subjectId) =>
   });
 
 export const getSessionAttendance = (sessionId) =>
-  api.get(`/teacher/attendance-records?limit=100`).then((res) => {
-    // Filter records from this session
-    const sessionRecords = (res.data?.records || [])
-      .filter(r => r._id === sessionId || !sessionId)
-      .slice(0, 100);
-    
+  api.get(`/teacher/session-attendance/${sessionId}`).then((res) => {
     return {
       ...res,
       data: {
-        students: (sessionRecords || []).map((record) => ({
-          id: record.studentId?._id || record.enrollmentNo,
-          name: record.studentId?.enrollmentNo || 'Unknown',
-          status: record.attendanceStatus || 'absent',
-          marked_at: record.scannedAt,
-        })),
-        present_count: sessionRecords.filter(r => r.attendanceStatus === 'present').length,
-        total_students: sessionRecords.length,
+        students: (res.data?.students || []),
+        present_count: res.data?.present_count || 0,
+        total_students: res.data?.total_students || 0,
       },
     };
-  }).catch(() => resolved({ students: [], present_count: 0, total_students: 0 }));
+  }).catch((err) => {
+    console.warn('Failed to get session attendance:', err.message);
+    return resolved({ students: [], present_count: 0, total_students: 0 });
+  });
 
 export const endSession = (sessionId) => 
   // Mark QR code as inactive if it exists, or just return success
@@ -395,10 +391,10 @@ export const endSession = (sessionId) =>
   );
 
 export const scanQR = (qrToken, sessionId) =>
-  // This endpoint validates a scanned QR token in the context of a session
-  api.post('/student/scan-qr', {
-    qrHash: qrToken || sessionId,
-    encryptedData: qrToken,
+  // Use the new teacher endpoint to mark attendance
+  api.post('/teacher/mark-attendance-qr', {
+    qrToken: qrToken,
+    sessionId: sessionId,
   }).catch((err) => {
     // Fallback for mock mode
     console.warn('Failed to scan QR:', err.message);

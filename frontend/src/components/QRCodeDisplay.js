@@ -15,7 +15,11 @@ function QRCodeDisplay({ studentData }) {
     setError('');
     try {
       const fp = generateDeviceFingerprint();
-      const res = await generateQRToken({ device_fingerprint: fp });
+      const res = await generateQRToken({ 
+        device_fingerprint: fp,
+        enrollmentNo: studentData?.enrollmentNo || studentData?.roll_number,
+        roll_number: studentData?.roll_number,
+      });
       setQrToken(res.data.qr_token);
       setTimer(30);
     } catch (err) {
@@ -23,7 +27,7 @@ function QRCodeDisplay({ studentData }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [studentData]);
 
   useEffect(() => {
     fetchToken();
