@@ -66,8 +66,8 @@ function QRCodeDisplay({ studentData }) {
         )}
       </div>
       <div className="qr-info">
-        <h3>{studentData?.full_name}</h3>
-        <p>{studentData?.roll_number} • {studentData?.department}</p>
+        <h3>{studentData?.fullName || studentData?.full_name}</h3>
+        <p>{studentData?.rollNumber || studentData?.roll_number} • {studentData?.department}</p>
         <p className="text-sm text-muted mt-8">
           Show this QR code to your teacher for attendance
         </p>

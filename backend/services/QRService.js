@@ -6,6 +6,12 @@ class QRService {
   constructor() {
     this.refreshInterval = config.qrRefreshInterval;
     this.encryptionKey = config.qrEncryptionKey;
+    
+    // Validate encryption key length (AES-256 requires 32 bytes = 64 hex characters)
+    if (!this.encryptionKey || this.encryptionKey.length < 64) {
+      console.warn('⚠️ QR_ENCRYPTION_KEY is missing or too short. Using default 64-character hex key.');
+      this.encryptionKey = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    }
   }
 
   /**

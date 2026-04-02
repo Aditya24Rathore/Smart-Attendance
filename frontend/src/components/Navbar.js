@@ -29,7 +29,7 @@ function Navbar() {
       </div>
       <div className="navbar-user">
         <span className="navbar-role">{roleLabels[user.role] || user.role}</span>
-        <span style={{ fontSize: '0.9rem' }}>{user.full_name}</span>
+        <span style={{ fontSize: '0.9rem' }}>{user.fullName || user.full_name}</span>
         <button className="btn btn-logout" onClick={onLogout}>Logout</button>
       </div>
     </nav>

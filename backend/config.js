@@ -17,12 +17,12 @@ module.exports = {
   ].join(','),
   
   // JWT
-  jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+  jwtSecret: process.env.JWT_SECRET || 'smartattendance_default_jwt_secret_key_change_in_production_12345678901234567890',
   jwtExpire: process.env.JWT_EXPIRE || '7d',
   
   // QR Code
   qrRefreshInterval: parseInt(process.env.QR_REFRESH_INTERVAL) || 30000,
-  qrEncryptionKey: process.env.QR_ENCRYPTION_KEY || 'your_qr_encryption_key',
+  qrEncryptionKey: process.env.QR_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
   
   // Firebase
   firebase: {
