@@ -11,8 +11,11 @@ mongodb+srv://ratheraditya262_db_user:6WEwFLBAAMwvDY5acluster0...
 ```
 
 **CORRECT VALUE:**
+See your local `backend/.env` file - it contains the full connection string with credentials. Copy the MONGODB_URI value from your .env file and paste it into Render environment variables.
+
+Format should be:
 ```
-mongodb+srv://rathoreaditya262_db_user:Aditya24Mongo@cluster0.3hx30wj.mongodb.net/smart_attendance?retryWrites=true&w=majority&appName=Cluster0
+mongodb+srv://USERNAME:PASSWORD@cluster0.3hx30wj.mongodb.net/smart_attendance?retryWrites=true&w=majority&appName=Cluster0
 ```
 
 **Why it was failing:** The previous value was malformed (missing `@` separator and database name)

@@ -14,13 +14,15 @@ Update these in your Render dashboard → **smart-attendance-backend** → **Set
 
 | Variable | Value | Status |
 |----------|-------|--------|
-| `MONGODB_URI` | `mongodb+srv://rathoreaditya262_db_user:Aditya24Mongo@cluster0.3hx30wj.mongodb.net/smart_attendance?retryWrites=true&w=majority&appName=Cluster0` | 🔴 CRITICAL FIX |
+| `MONGODB_URI` | See `.env` file (contains sensitive credentials) | 🔴 CRITICAL FIX |
 | `ADMIN_EMAIL` | `admin@smartattendance.com` | ✅ Already Correct |
-| `ADMIN_PASSWORD` | `Admin@123` | ✅ Already Correct |
-| `JWT_SECRET` | `b625586fdef0e45defd387d17be4aa5a` | ⚠️ Can Keep (min 32 chars) |
-| `QR_ENCRYPTION_KEY` | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6` | ✅ Good |
+| `ADMIN_PASSWORD` | See `.env` file (sensitive) | ✅ Set in .env |
+| `JWT_SECRET` | See `.env` file (sensitive) | ⚠️ In .env |
+| `QR_ENCRYPTION_KEY` | See `.env` file (sensitive) | ✅ In .env |
 | `CORS_ORIGIN` | `http://localhost:3000,https://smart-attendance-frontend.onrender.com,https://smart-attendance-frontend-wbsb.onrender.com` | ✅ Already Correct |
 | `NODE_ENV` | `production` | ✅ Already Correct |
+
+**⚠️ SECURITY NOTE:** Complete MongoDB URI with credentials is stored in your local `backend/.env` file which is in .gitignore and should never be committed to Git.
 
 ---
 
@@ -32,10 +34,11 @@ Update these in your Render dashboard → **smart-attendance-backend** → **Set
 4. **Find MONGODB_URI:** 
    - Click the edit icon (pencil) next to it
    - **DELETE the old malformed value**
-   - **PASTE the new value from above:**
+   - **PASTE the new value from your `backend/.env` file:**
    ```
-   mongodb+srv://rathoreaditya262_db_user:Aditya24Mongo@cluster0.3hx30wj.mongodb.net/smart_attendance?retryWrites=true&w=majority&appName=Cluster0
+   mongodb+srv://USERNAME:PASSWORD@cluster0.3hx30wj.mongodb.net/smart_attendance?retryWrites=true&w=majority&appName=Cluster0
    ```
+   *(Replace USERNAME:PASSWORD with values from your .env file)*
 5. **Click Update/Save**
 6. **Deploy:** The service should auto-redeploy. If not, manual deploy to trigger rebuild.
 
