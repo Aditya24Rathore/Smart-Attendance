@@ -471,6 +471,100 @@ body {
   color: var(--danger);
 }
 
+/* ===== Attendance Success Modal ===== */
+.attendance-success-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.attendance-success-modal {
+  background: white;
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.success-checkmark {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+}
+
+.checkmark-svg {
+  animation: checkmarkDraw 0.6s ease-out;
+}
+
+@keyframes checkmarkDraw {
+  0% {
+    stroke-dashoffset: 100;
+    stroke-dasharray: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    stroke-dasharray: 100;
+  }
+}
+
+.success-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0 0 16px 0;
+}
+
+.success-details {
+  background: var(--gray-50);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  margin-top: 16px;
+}
+
+.success-student {
+  font-size: 0.95rem;
+  color: var(--gray-700);
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.success-time {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin: 0;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
 /* ===== Tables ===== */
 .table-container {
   overflow-x: auto;
