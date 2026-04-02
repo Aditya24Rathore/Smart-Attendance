@@ -39,77 +39,7 @@ router.get('/dashboard', verifyToken, requireRole('student'), async (req, res) =
   }
 });
 
-/**
- * POST /api/student/scan-qr
- * Student scans QR code for attendance
- */
-router.post('/scan-qr', verifyToken, requireRole('student'), async (req, res) => {
-  try {
-    const { qrHash, encryptedData } = req.body;
 
-    if (!qrHash || !encryptedData) {
-      return res.status(400).json({ error: 'QR data required' });
-    }
-
-    const student = await Student.findOne({ userId: req.userId });
-    if (!student) {
-      return res.status(404).json({ error: 'Student profile not found' });
-    }
-
-    // Find QR code
-    const qrCode = await QRCode.findOne({ qrHash, isActive: true });
-    if (!qrCode) {
-      return res.status(400).json({ error: 'Invalid or expired QR code' });
-    }
-
-    // Verify QR code is not expired
-    if (new Date() > qrCode.expiresAt) {
-      return res.status(400).json({ error: 'QR code has expired' });
-    }
-
-    // Decrypt and verify data
-    let qrData;
-    try {
-      qrData = QRService.decryptData(encryptedData);
-    } catch (error) {
-      return res.status(400).json({ error: 'Invalid QR data' });
-    }
-
-    // Verify QR code validity (30-second window)
-    const verification = QRService.verifyQRCode(qrHash, qrCode.generatedAt);
-    if (!verification.isValid) {
-      return res.status(400).json({ error: verification.error });
-    }
-
-    // Create attendance record
-    const attendance = new Attendance({
-      studentId: student._id,
-      enrollmentNo: student.enrollmentNo,
-      teacherId: qrData.teacherId,
-      qrCodeHash: qrHash,
-      qrGeneratedAt: qrCode.generatedAt,
-      ipAddress: req.ip,
-      deviceInfo: req.headers['user-agent'],
-      attendanceStatus: 'present',
-    });
-
-    await attendance.save();
-
-    // Update QR code usage
-    qrCode.usageCount += 1;
-    qrCode.lastScannedAt = new Date();
-    await qrCode.save();
-
-    res.json({
-      success: true,
-      message: 'Attendance marked successfully',
-      attendance: attendance.toObject(),
-    });
-  } catch (error) {
-    console.error('Error scanning QR:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
 
 /**
  * GET /api/student/attendance-history

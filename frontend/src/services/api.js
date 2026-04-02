@@ -119,8 +119,9 @@ export const adminLogin = (collegeId, email, password) =>
 export const getStudentDashboard = () =>
   api.get('/student/dashboard');
 
-export const scanQRCode = (qrHash, encryptedData) =>
-  api.post('/student/scan-qr', { qrHash, encryptedData });
+export const scanQRCode = () =>
+  // Deprecated - no longer supported
+  resolved({ error: 'Old QR scanning method is deprecated' });
 
 export const getAttendanceHistory = (page = 1, limit = 20, month, year) =>
   api.get('/student/attendance-history', {
@@ -134,12 +135,6 @@ export const getStudentQRCode = () =>
 
 export const getTeacherDashboard = () =>
   api.get('/teacher/dashboard');
-
-export const generateDynamicQR = (classId = null) =>
-  api.post('/teacher/generate-qr', { classId });
-
-export const checkQRStatus = (qrHash) =>
-  api.get(`/teacher/qr-status/${qrHash}`);
 
 export const getTeacherAttendanceRecords = (page = 1, limit = 20, month, year) =>
   api.get('/teacher/attendance-records', {
@@ -345,32 +340,22 @@ export const getTeacherSessions = () =>
     },
   })).catch(() => resolved({ sessions: [] }));
 
-export const startSession = (subjectId) =>
-  api.post('/teacher/generate-qr', { classId: subjectId || null }).then((res) => ({
-    ...res,
+export const startSession = (subjectId) => {
+  // Create a simple session ID based on timestamp
+  // No QR generation needed - students show their QR codes instead
+  const sessionId = `session_${Date.now()}`;
+  return resolved({
     data: {
       session: {
-        id: res.data?.qrCode?.qrHash || `${Date.now()}`,
-        subject_code: 'QR Session',
-        subject_name: 'QR Code Session',
+        id: sessionId,
+        subject_code: 'Class',
+        subject_name: 'Attendance Session',
         is_active: true,
-        qr_hash: res.data?.qrCode?.qrHash,
-        expires_at: res.data?.qrCode?.expiresAt,
+        started_at: new Date().toISOString(),
       },
     },
-  })) .catch((err) => {
-    // Fallback to mock session if API fails
-    console.warn('Failed to start session:', err.message);
-    return resolved({
-      session: {
-        id: `${Date.now()}`,
-        subject_code: 'N/A',
-        subject_name: 'Session',
-        is_active: true,
-        date: new Date().toLocaleDateString(),
-      },
-    });
   });
+};
 
 export const getSessionAttendance = (sessionId) =>
   api.get(`/teacher/session-attendance/${sessionId}`).then((res) => {
@@ -387,22 +372,10 @@ export const getSessionAttendance = (sessionId) =>
     return resolved({ students: [], present_count: 0, total_students: 0 });
   });
 
-export const endSession = (sessionId) => 
-  // Mark QR code as inactive if it exists, or just return success
-  api.patch(`/teacher/qr-status/${sessionId}`, { isActive: false }).catch(() => 
-    resolved({ success: true })
-  );
-
-export const scanQR = (qrToken, sessionId) =>
-  // Use the new teacher endpoint to mark attendance
-  api.post('/teacher/mark-attendance-qr', {
-    qrToken: qrToken,
-    sessionId: sessionId,
-  }).catch((err) => {
-    // Fallback for mock mode
-    console.warn('Failed to scan QR:', err.message);
-    return resolved({ success: true, message: 'Scanned (compatibility mode)' });
-  });
+export const endSession = (sessionId) => {
+  // Session ends when teacher stops scanning
+  return resolved({ success: true, message: 'Session ended' });
+};
 
 export const scanStudentQR = (qrData) =>
   // Teacher scans student's personal QR code
