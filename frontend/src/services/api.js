@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const defaultApiBase = process.env.NODE_ENV === 'production'
-  ? 'https://smart-attendance-backend.onrender.com/api'
+  ? 'https://smart-attendance-backend-zbz3.onrender.com/api'
   : 'http://localhost:5000/api';
 
 const configuredApiBase = (process.env.REACT_APP_API_URL || defaultApiBase).trim();
