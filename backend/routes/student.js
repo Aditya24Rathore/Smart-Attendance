@@ -84,6 +84,9 @@ router.get('/attendance-history', verifyToken, requireRole('student'), async (re
   } catch (error) {
     console.error('Error fetching attendance history:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
 /**
  * GET /api/student/generate-qr
  * Generate and get student's personal QR code
