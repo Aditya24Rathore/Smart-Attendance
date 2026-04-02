@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StudentQRDisplay from '../components/StudentQRDisplay';
 import { useAuth } from '../App';
-import { getAttendanceSummary, getStudentAttendance, getActiveSessions } from '../services/api';
+import { getAttendanceSummary, getStudentAttendance } from '../services/api';
 
 function StudentDashboard() {
   return (
@@ -24,24 +24,15 @@ function StudentHome() {
   const { studentData } = useAuth();
   const [tab, setTab] = useState('qr');
   const [summary, setSummary] = useState(null);
-  const [activeSessions, setActiveSessions] = useState([]);
 
   useEffect(() => {
     loadSummary();
-    loadSessions();
   }, []);
 
   const loadSummary = async () => {
     try {
       const res = await getAttendanceSummary();
       setSummary(res.data);
-    } catch {}
-  };
-
-  const loadSessions = async () => {
-    try {
-      const res = await getActiveSessions();
-      setActiveSessions(res.data.sessions || []);
     } catch {}
   };
 
@@ -53,9 +44,6 @@ function StudentHome() {
         </button>
         <button className={`tab ${tab === 'attendance' ? 'active' : ''}`} onClick={() => setTab('attendance')}>
           📊 Attendance
-        </button>
-        <button className={`tab ${tab === 'sessions' ? 'active' : ''}`} onClick={() => setTab('sessions')}>
-          📚 Sessions
         </button>
       </div>
 
@@ -111,32 +99,6 @@ function StudentHome() {
             )}
           </div>
         </>
-      )}
-
-      {tab === 'sessions' && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Active Class Sessions</h3>
-            <button className="btn btn-primary btn-sm" onClick={loadSessions}>Refresh</button>
-          </div>
-          {activeSessions.length === 0 ? (
-            <div className="empty-state">
-              <div className="icon">📚</div>
-              <h3>No Active Sessions</h3>
-              <p>No classes are currently in session</p>
-            </div>
-          ) : (
-            activeSessions.map((s) => (
-              <div key={s.id} className="attendance-item">
-                <div className="student-info">
-                  <span className="student-name">{s.subject_name}</span>
-                  <span className="student-roll">{s.subject_code} • {s.teacher_name}</span>
-                </div>
-                <span className="badge badge-active">Active</span>
-              </div>
-            ))
-          )}
-        </div>
       )}
     </>
   );

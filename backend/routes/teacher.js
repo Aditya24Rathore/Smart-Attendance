@@ -1,6 +1,6 @@
 const express = require('express');
 const { verifyToken, requireRole } = require('../middleware/auth');
-const { Teacher, Student, Attendance, QRCode, Subject } = require('../models');
+const { Teacher, Student, Attendance, Subject } = require('../models');
 const QRService = require('../services/QRService');
 const router = express.Router();
 
@@ -217,38 +217,33 @@ router.post('/scan-student-qr', verifyToken, requireRole('teacher'), async (req,
 
 /**
  * GET /api/teacher/session-attendance/:sessionId
- * Get attendance list for a specific session (all marked students)
- * sessionId is the QR code hash
+ * Get today's attendance for a session
  */
 router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
-    const { sessionId } = req.params;
-    
     const teacher = await Teacher.findOne({ userId: req.userId });
     if (!teacher) {
       return res.status(404).json({ error: 'Teacher profile not found' });
     }
 
-    // Get subjects taught by this teacher
-    const subjects = await Subject.find({
-      $or: [
-        { teacherId: teacher._id },
-        { assignedTeachers: teacher._id },
-      ],
-    });
-    const subjectIds = subjects.map(s => s._id);
-
-    // Get all students in these subjects
+    // Get all students (for now, all students in the system)
     const allStudents = await Student.find({}).populate('userId');
     
-    // Get attendance records marked for this specific QR session by this teacher
-    // sessionId is the QR code hash (qrCodeHash field in Attendance)
-    const sessionRecords = await Attendance.find({
+    // Get today's attendance marked by this teacher
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayRecords = await Attendance.find({
       teacherId: teacher._id,
-      qrCodeHash: sessionId,
+      scannedAt: {
+        $gte: today,
+        $lt: tomorrow,
+      },
     }).populate('studentId');
 
-    const presentStudentIds = new Set(sessionRecords.map(r => String(r.studentId?._id)));
+    const presentStudentIds = new Set(todayRecords.map(r => String(r.studentId?._id)));
 
     // Build student list with attendance status
     const studentList = allStudents.map(student => ({
@@ -274,43 +269,7 @@ router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher')
   }
 });
 
-/**
- * PATCH /api/teacher/qr-status/:qrHash
- * Deactivate a QR code (end session)
- */
-router.patch('/qr-status/:qrHash', verifyToken, requireRole('teacher'), async (req, res) => {
-  try {
-    const { qrHash } = req.params;
-    const { isActive } = req.body;
 
-    const qrCode = await QRCode.findOne({ qrHash });
-    if (!qrCode) {
-      return res.status(404).json({ error: 'QR code not found' });
-    }
-
-    // Verify this QR code belongs to the current teacher
-    const teacher = await Teacher.findOne({ userId: req.userId });
-    if (!teacher || String(qrCode.teacherId) !== String(teacher._id)) {
-      return res.status(403).json({ error: 'Unauthorized - this QR code does not belong to you' });
-    }
-
-    // Update isActive status
-    qrCode.isActive = isActive === false ? false : true;
-    await qrCode.save();
-
-    res.json({
-      success: true,
-      message: `QR code ${qrCode.isActive ? 'activated' : 'deactivated'}`,
-      qrCode: {
-        qrHash: qrCode.qrHash,
-        isActive: qrCode.isActive,
-      },
-    });
-  } catch (error) {
-    console.error('Error updating QR status:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
 
 /**
  * POST /api/teacher/mark-attendance-manual
