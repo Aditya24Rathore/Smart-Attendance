@@ -1108,7 +1108,6 @@ function AssignTeacherModal({ subject, teachers, onClose, onSuccess, setError })
       await assignTeacherToSubject(subject.id, selectedTeacherId);
       onSuccess();
     } catch (err) {
-      console.error('Assign teacher error:', err);
       const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to assign teacher';
       setError(errorMsg);
     } finally {

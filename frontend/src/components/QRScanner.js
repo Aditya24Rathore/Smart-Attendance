@@ -14,22 +14,50 @@ function QRScanner({ onScan, isActive = true }) {
       const scanner = new Html5Qrcode('qr-reader');
       html5QrRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-        },
-        (decodedText) => {
-          onScan(decodedText);
-        },
-        () => {} // ignore failures
-      );
-      setIsScanning(true);
-      setError('');
+      // Try with user-facing camera first (for laptops), then fallback to environment camera (for phones)
+      const cameraConfigs = [
+        { facingMode: 'user' }, // Front camera (laptops, most devices)
+        { facingMode: 'environment' }, // Back camera (phones)
+      ];
+
+      let started = false;
+      let lastError = null;
+
+      for (const config of cameraConfigs) {
+        try {
+          await scanner.start(
+            config,
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0,
+            },
+            (decodedText) => {
+              onScan(decodedText);
+            },
+            (errorMessage) => {
+              // Log only info-level errors, not critical ones
+              if (errorMessage && !errorMessage.includes('NotFoundException')) {
+                // Silently ignore harmless errors from library scanning attempts
+              }
+            }
+          );
+          started = true;
+          break;
+        } catch (err) {
+          lastError = err;
+          // Try next camera config
+        }
+      }
+
+      if (started) {
+        setIsScanning(true);
+        setError('');
+      } else {
+        throw lastError || new Error('No camera available');
+      }
     } catch (err) {
-      setError('Unable to access camera. Please grant camera permission.');
+      setError('Unable to access camera. Please check: 1) Camera is connected, 2) Browser has camera permission, 3) Another app isn\'t using the camera.');
       setIsScanning(false);
     }
   }, [onScan, isActive]);
