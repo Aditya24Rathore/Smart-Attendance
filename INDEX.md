@@ -77,8 +77,7 @@ smart-attendance/
 │   │   ├── Teacher.js
 │   │   ├── Attendance.js
 │   │   ├── Subject.js
-│   │   ├── OTP.js
-│   │   └── QRCode.js
+│   │   └── OTP.js
 │   │
 │   ├── routes/                 ← API Routes
 │   │   ├── auth.js

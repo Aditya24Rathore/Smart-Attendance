@@ -4,9 +4,9 @@
 
 - **Node.js & Express.js** - Backend framework
 - **MongoDB** - Database
-- **Firebase** - OTP Authentication
+- **Firebase** - OTP Authentication (optional)
 - **JWT** - Token-based authentication
-- **QR Code** - Dynamic QR codes for attendance (refreshes every 30 seconds)
+- **QR Code** - Static student QR codes based on enrollment
 
 ## Project Structure
 
@@ -114,9 +114,6 @@ See `.env.example` for all configuration options.
 
 ### Attendance
 - studentId, teacherId, enrollmentNo, qrCodeHash, scannedAt, attendanceStatus
-
-### QRCodes
-- teacherId, qrHash, qrData, qrImage, generatedAt, expiresAt, usageCount
 
 ### OTP
 - userId, phoneNumber, email, otpCode, purpose, isUsed, expiryTime

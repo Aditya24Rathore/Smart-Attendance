@@ -6,7 +6,7 @@ This project can be hosted fully on Render using the root `render.yaml`.
 
 - GitHub repository connected to Render
 - MongoDB Atlas connection string
-- Strong secrets for JWT and QR encryption
+- Strong JWT secret (32+ characters)
 
 ## 1) Deploy from Blueprint
 

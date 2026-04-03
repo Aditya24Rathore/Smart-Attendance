@@ -204,14 +204,11 @@ POST   /bulk-update-attendance
 ```
 MONGODB_URI=mongodb://localhost:27017/smart_attendance
 JWT_SECRET=your_jwt_secret_key_here
-QR_ENCRYPTION_KEY=your_qr_encryption_key
 PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
 OTP_LENGTH=6
 OTP_EXPIRY=10
-FIREBASE_API_KEY=your_key
-SMTP_HOST=smtp.gmail.com
 ADMIN_EMAIL=admin@smartattendance.com
 ADMIN_PASSWORD=<change_this_before_production>
 ```
@@ -231,7 +228,6 @@ REACT_APP_API_URL=http://localhost:5000/api
 4. **subjects** - Academic subjects/courses
 5. **attendance** - Attendance records
 6. **otps** - OTP records (auto-expire)
-7. **qrcodes** - QR code records (auto-expire)
 
 ---
 

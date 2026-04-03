@@ -209,15 +209,12 @@ The frontend will be available at `http://localhost:3000`
 
 ## QR Code System
 
-- QR codes refresh every **30 seconds**
-- Each QR contains:
-  - Teacher ID
-  - Class/Session ID  
-  - Timestamp
-  - Random unique value
-- Uses **AES-256 encryption**
-- **Non-shareable** - Cannot be used if screenshot is detected
-- **Time-bound** - Valid for exactly 30 seconds
+- Each student generates a **static personal QR code** based on their enrollment number
+- QR code contains encrypted student identification data
+- **Teacher Workflow:** Initiate session → Scan student QR codes → Attendance marked in real-time
+- Sessions are identified by timestamp-based IDs
+- Uses **AES-256 encryption** for secure QR data
+- **No expiry** on personal QR codes (valid throughout enrollment)
 
 ## Environment Variables
 
@@ -225,10 +222,11 @@ The frontend will be available at `http://localhost:3000`
 ```
 MONGODB_URI=<your_mongodb_connection_string>
 JWT_SECRET=<your_jwt_secret_key>
-QR_ENCRYPTION_KEY=<your_encryption_key>
 PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
+ADMIN_EMAIL=admin@smartattendance.com
+ADMIN_PASSWORD=<your_secure_password>
 ```
 
 ### Frontend (.env)
@@ -278,9 +276,9 @@ REACT_APP_API_URL=http://localhost:5000/api
 - Verify phone/email format
 
 ### QR Code Issues
-- Ensure QR_ENCRYPTION_KEY is set and is 32 characters
-- Check QR refresh interval setting
 - Verify browser camera permissions
+- Ensure student has a valid enrollment number
+- Check that teacher session is active before scanning
 
 ## Development Notes
 
@@ -310,7 +308,6 @@ REACT_APP_API_URL=http://localhost:5000/api
 2. Set required secret env vars in Render dashboard:
    - `MONGODB_URI`
    - `JWT_SECRET`
-   - `QR_ENCRYPTION_KEY`
    - `CORS_ORIGIN` (your Vercel URL, comma-separated if multiple)
    - `ADMIN_PASSWORD`
 3. Keep `NODE_ENV=production`.

@@ -297,9 +297,10 @@ db.attendance.aggregate([
 - Auto-expires after 10 minutes
 
 ### QR Code:
-- Expires after 30 seconds
-- Cannot be reused after expiry
+- Static codes based on student enrollment
+- Valid throughout student enrollment (no expiry)
 - Encrypted using AES-256
+- Non-transferable (tied to enrollment number)
 
 ---
 

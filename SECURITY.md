@@ -34,7 +34,8 @@ Your `.env` file:
 ```
 MONGODB_URI=<copy your connection string from MongoDB Atlas>
 JWT_SECRET=<generate a strong 32+ character random key>
-QR_ENCRYPTION_KEY=<generate a 32-character hex key>
+ADMIN_EMAIL=admin@smartattendance.com
+ADMIN_PASSWORD=<your_secure_password>
 ```
 ⚠️ **Never show actual connection strings or keys - these are examples only**
 
@@ -134,9 +135,10 @@ PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
 JWT_SECRET=<generate_local_key>
-QR_ENCRYPTION_KEY=<generate_local_key>
 OTP_LENGTH=6
 OTP_EXPIRY=10
+ADMIN_EMAIL=admin@smartattendance.com
+ADMIN_PASSWORD=<your_secure_password>
 ```
 
 ### Production (Use platform's secret manager)
@@ -146,8 +148,8 @@ PORT=5000
 NODE_ENV=production
 CORS_ORIGIN=https://yourdomain.com
 JWT_SECRET=<production_secret_key>
-QR_ENCRYPTION_KEY=<production_key>
-FIREBASE_API_KEY=<your_firebase_key>
+ADMIN_EMAIL=<admin_email>
+ADMIN_PASSWORD=<admin_password>
 SMTP_HOST=smtp.gmail.com
 ```
 ⚠️ **Replace all `<...>` with your actual values. Never show these in logs or documentation.**
