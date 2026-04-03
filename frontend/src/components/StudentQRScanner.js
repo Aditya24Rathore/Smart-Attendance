@@ -9,7 +9,7 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
   const [isLoading, setIsLoading] = useState(false);
   const qrInstanceRef = useRef(null);
   const isProcessingRef = useRef(false);
-  const containerRef = useRef(null);
+  const isScannerInitializedRef = useRef(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -21,61 +21,67 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
     };
   }, []);
 
-  const startScanning = async () => {
-    setScanning(true);
-    setError('');
-    setScanResult(null);
-    isProcessingRef.current = false;
+  // Initialize scanner when scanning becomes true
+  useEffect(() => {
+    if (!scanning || isScannerInitializedRef.current) return;
 
-    try {
-      // Check if scanner container exists
-      const scannerElement = document.getElementById('qr-scanner');
-      if (!scannerElement) {
-        setError('❌ Scanner element not found. Please refresh the page.');
-        setScanning(false);
-        return;
-      }
+    const initializeScanner = async () => {
+      try {
+        isScannerInitializedRef.current = true;
+        setError('');
+        setScanResult(null);
+        isProcessingRef.current = false;
 
-      // Clear any previous scanner instance
-      if (qrInstanceRef.current) {
+        // Check if scanner container exists (now that React has rendered it)
+        const scannerElement = document.getElementById('qr-scanner');
+        if (!scannerElement) {
+          setError('❌ Scanner element not found. Page rendering delayed. Please try again.');
+          setScanning(false);
+          isScannerInitializedRef.current = false;
+          return;
+        }
+
+        // Clear any previous scanner instance
+        if (qrInstanceRef.current) {
+          try {
+            await qrInstanceRef.current.stop();
+          } catch (e) {
+            console.debug('Error clearing previous scanner:', e);
+          }
+          qrInstanceRef.current = null;
+        }
+
+        // Initialize new scanner instance
+        qrInstanceRef.current = new Html5Qrcode('qr-scanner');
+
+        // Get available cameras
+        let devices = [];
         try {
-          await qrInstanceRef.current.stop();
-        } catch (e) {
-          console.debug('Error clearing previous scanner:', e);
+          devices = await Html5Qrcode.getCameras();
+        } catch (cameraErr) {
+          console.error('Camera detection error:', cameraErr);
+          if (cameraErr.name === 'NotAllowedError' || cameraErr.message?.includes('Permission')) {
+            setError('❌ Camera permission denied. Please allow camera access in your browser settings.');
+          } else if (cameraErr.name === 'NotFoundError') {
+            setError('❌ No camera found on this device.');
+          } else {
+            setError(`❌ Cannot detect camera: ${cameraErr.message || 'Unknown error'}`);
+          }
+          setScanning(false);
+          isScannerInitializedRef.current = false;
+          return;
         }
-        qrInstanceRef.current = null;
-      }
 
-      // Initialize new scanner instance
-      qrInstanceRef.current = new Html5Qrcode('qr-scanner');
-
-      // Get available cameras
-      let devices = [];
-      try {
-        devices = await Html5Qrcode.getCameras();
-      } catch (cameraErr) {
-        console.error('Camera detection error:', cameraErr);
-        if (cameraErr.name === 'NotAllowedError' || cameraErr.message?.includes('Permission')) {
-          setError('❌ Camera permission denied. Please allow camera access in your browser settings and refresh.');
-        } else if (cameraErr.name === 'NotFoundError') {
-          setError('❌ No camera found on this device.');
-        } else {
-          setError(`❌ Cannot detect camera: ${cameraErr.message || 'Unknown error'}`);
+        if (!devices || devices.length === 0) {
+          setError('❌ No camera found. Please ensure a camera is connected and permissions are granted.');
+          setScanning(false);
+          isScannerInitializedRef.current = false;
+          return;
         }
-        setScanning(false);
-        return;
-      }
 
-      if (!devices || devices.length === 0) {
-        setError('❌ No camera found. Please ensure a camera is connected and permissions are granted.');
-        setScanning(false);
-        return;
-      }
+        // Start scanning with the first available camera
+        const cameraId = devices[0].id;
 
-      // Start scanning with the first available camera
-      const cameraId = devices[0].id;
-      
-      try {
         await qrInstanceRef.current.start(
           cameraId,
           {
@@ -85,7 +91,7 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
           async (decodedText) => {
             // Prevent processing multiple scans simultaneously
             if (isProcessingRef.current) return;
-            
+
             isProcessingRef.current = true;
             try {
               setIsLoading(true);
@@ -115,7 +121,21 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
               }
             } catch (err) {
               console.error('Scan processing error:', err);
-              const errorMsg = err.response?.data?.error || err.message || 'Failed to mark attendance';
+              
+              // Handle different error scenarios
+              let errorMsg = 'Failed to mark attendance';
+              
+              if (err.response?.status === 409) {
+                // Duplicate scan within 2 minutes
+                errorMsg = err.response?.data?.error || '⚠️ Already marked for this student. Wait 2 minutes before rescanning.';
+              } else if (err.response?.data?.error) {
+                errorMsg = err.response.data.error;
+              } else if (err.response?.data?.message) {
+                errorMsg = err.response.data.message;
+              } else if (err.message) {
+                errorMsg = err.message;
+              }
+              
               setScanResult({
                 type: 'error',
                 message: errorMsg,
@@ -133,32 +153,36 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
             }
           }
         );
-      } catch (startErr) {
-        console.error('Scanner start error:', startErr);
-        const errorMsg = startErr.message || 'Failed to start camera';
-        
-        if (startErr.name === 'NotAllowedError') {
+      } catch (err) {
+        console.error('Scanner initialization error:', err);
+        const errorMsg = err.message || 'Failed to start camera';
+
+        if (err.name === 'NotAllowedError') {
           setError('❌ Camera permission denied. Please allow camera access in your browser settings.');
-        } else if (startErr.name === 'NotFoundError') {
+        } else if (err.name === 'NotFoundError') {
           setError('❌ No camera found on this device.');
-        } else if (startErr.message?.includes('permission') || startErr.message?.includes('Permission')) {
+        } else if (err.message?.includes('permission') || err.message?.includes('Permission')) {
           setError('❌ Camera permission required. Please check your browser settings.');
-        } else if (startErr.message?.includes('NotReadable')) {
+        } else if (err.message?.includes('NotReadable')) {
           setError('❌ Camera is in use by another application. Please close other apps using the camera.');
-        } else if (startErr.message?.includes('HTTPS') || startErr.message?.includes('https')) {
+        } else if (err.message?.includes('HTTPS') || err.message?.includes('https')) {
           setError('❌ HTTPS is required for camera access. Your connection may not be secure.');
         } else {
           setError(`❌ Failed to start camera: ${errorMsg}`);
         }
-        
+
         setScanning(false);
+        isScannerInitializedRef.current = false;
         qrInstanceRef.current = null;
       }
-    } catch (err) {
-      console.error('Unexpected scanner error:', err);
-      setError(`❌ Unexpected error: ${err.message || 'Unknown error'}`);
-      setScanning(false);
-    }
+    };
+
+    initializeScanner();
+  }, [scanning]);
+
+  const startScanning = () => {
+    isScannerInitializedRef.current = false;
+    setScanning(true);
   };
 
   const stopScanning = async () => {
@@ -170,6 +194,7 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
     } catch (err) {
       console.error('Error stopping scanner:', err);
     }
+    isScannerInitializedRef.current = false;
     setScanning(false);
   };
 

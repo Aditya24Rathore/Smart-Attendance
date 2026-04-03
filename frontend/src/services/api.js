@@ -322,7 +322,10 @@ export const getTeacherSubjects = () =>
         semester: s.semester,
       })),
     },
-  })).catch(() => resolved({ subjects: [] }));
+  })).catch((err) => {
+    console.error('Failed to fetch subjects:', err.message);
+    return resolved({ subjects: [] });
+  });
 
 export const getTeacherSessions = () =>
   api.get('/teacher/attendance-records').then((res) => ({
@@ -386,12 +389,8 @@ export const endSession = (sessionId) => {
 };
 
 export const scanStudentQR = (qrData) =>
-  // Teacher scans student's personal QR code
   api.post('/teacher/scan-student-qr', {
     qrData: qrData,
-  }).catch((err) => {
-    console.warn('Failed to scan student QR:', err.message);
-    return resolved({ success: true, message: 'Scanned (compatibility mode)' });
   });
 
 export const manualAttendance = (studentId, sessionId, status) =>
