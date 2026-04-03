@@ -63,7 +63,7 @@ function TeacherHome() {
       const res = await startSession(selectedSubject);
       const newSession = res.data.session;
       setActiveSession(newSession);
-      await loadAttendance(newSession.id);
+      await loadAttendance(newSession.id, selectedSubject);
       setTab('scan');
       setScanResult(null);
     } catch (err) {
@@ -89,9 +89,9 @@ function TeacherHome() {
     }
   };
 
-  const loadAttendance = async (sessionId) => {
+  const loadAttendance = async (sessionId, subId = null) => {
     try {
-      const res = await getSessionAttendance(sessionId);
+      const res = await getSessionAttendance(sessionId, subId || selectedSubject);
       setAttendance(res.data);
     } catch (err) {
       console.error('Failed to load attendance:', err);
@@ -105,16 +105,16 @@ function TeacherHome() {
         message: result.message || '✅ Attendance Marked',
         student: result.student,
       });
-      loadAttendance(activeSession.id);
+      loadAttendance(activeSession.id, selectedSubject);
       setTimeout(() => setScanResult(null), 2000);
     }
-  }, [activeSession]);
+  }, [activeSession, selectedSubject]);
 
   const handleManualAttendance = async (studentId, status) => {
     if (!activeSession) return;
     try {
       await manualAttendance(studentId, activeSession.id, status);
-      loadAttendance(activeSession.id);
+      loadAttendance(activeSession.id, selectedSubject);
     } catch {}
   };
 

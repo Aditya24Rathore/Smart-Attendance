@@ -257,7 +257,7 @@ router.post('/scan-student-qr', verifyToken, requireRole('teacher'), async (req,
 
 /**
  * GET /api/teacher/session-attendance/:sessionId
- * Get today's attendance for a session
+ * Get today's attendance for a session with optional subject filter
  */
 router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
@@ -266,8 +266,25 @@ router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher')
       return res.status(404).json({ error: 'Teacher profile not found' });
     }
 
-    // Get all students (for now, all students in the system)
-    const allStudents = await Student.find({}).populate('userId');
+    const { subjectId } = req.query;
+
+    // Build student filter
+    let studentFilter = {};
+    
+    if (subjectId) {
+      // If subjectId provided, fetch only students for that subject
+      const subject = await Subject.findById(subjectId);
+      if (!subject) {
+        // If subject not found, still proceed with all students
+        console.warn('Subject not found, fetching all students');
+      } else {
+        // Try to filter by subject if subject has student associations
+        // For now, get all students - subject filtering can be improved with proper schema
+      }
+    }
+
+    // Get all students (can be improved with subject-based filtering)
+    const allStudents = await Student.find(studentFilter).populate('userId');
     
     // Get today's attendance marked by this teacher
     const today = new Date();

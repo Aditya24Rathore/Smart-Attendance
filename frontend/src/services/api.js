@@ -360,8 +360,12 @@ export const startSession = (subjectId) => {
   });
 };
 
-export const getSessionAttendance = (sessionId) =>
-  api.get(`/teacher/session-attendance/${sessionId}`).then((res) => {
+export const getSessionAttendance = (sessionId, subjectId = null) => {
+  const url = subjectId 
+    ? `/teacher/session-attendance/${sessionId}?subjectId=${subjectId}`
+    : `/teacher/session-attendance/${sessionId}`;
+  
+  return api.get(url).then((res) => {
     return {
       ...res,
       data: {
@@ -374,6 +378,7 @@ export const getSessionAttendance = (sessionId) =>
     console.warn('Failed to get session attendance:', err.message);
     return resolved({ students: [], present_count: 0, total_students: 0 });
   });
+};
 
 export const endSession = (sessionId) => {
   // Session ends when teacher stops scanning
