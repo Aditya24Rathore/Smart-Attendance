@@ -784,6 +784,14 @@ router.get('/dashboard', verifyToken, requireRole('admin', 'hod'), async (req, r
       },
     });
 
+    // Fetch recent attendance records for display
+    const attendanceRecords = await Attendance.find()
+      .populate('studentId')
+      .populate('teacherId')
+      .populate('subjectId')
+      .sort({ scannedAt: -1 })
+      .limit(100);
+
     res.json({
       success: true,
       statistics: {
@@ -796,6 +804,7 @@ router.get('/dashboard', verifyToken, requireRole('admin', 'hod'), async (req, r
         todayAttendance,
       },
       recent_logs: [],
+      attendance: attendanceRecords,
     });
   } catch (error) {
     console.error('Error fetching dashboard:', error);

@@ -47,6 +47,8 @@ function AdminHome() {
   });
   const [editingItem, setEditingItem] = useState(null);
   const [editingType, setEditingType] = useState(null);
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => { loadDashboard(); }, []);
 
@@ -90,11 +92,26 @@ function AdminHome() {
     } catch {}
   };
 
+  const loadAttendanceData = async () => {
+    try {
+      setLoading(true);
+      const res = await getAdminDashboard();
+      if (res.data.attendance) {
+        setAttendanceData(res.data.attendance);
+      }
+    } catch (err) {
+      console.error('Error loading attendance data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (tab === 'students') loadStudents();
     else if (tab === 'teachers') loadTeachers();
     else if (tab === 'subjects') loadSubjects();
     else if (tab === 'defaulters') loadDefaulters();
+    else if (tab === 'reports') loadAttendanceData();
   }, [tab, filterDept]);
 
   useEffect(() => {
@@ -119,10 +136,15 @@ function AdminHome() {
     setExportingType('excel');
     try {
       const res = await exportExcel({ department: filterDept });
+      if (!res || !res.data) {
+        throw new Error('Empty response from server');
+      }
       downloadBlob(res.data, 'attendance_report.xlsx');
       setSuccess('Excel report downloaded successfully');
-    } catch {
-      setError('Excel export failed');
+    } catch (err) {
+      console.error('Excel export error:', err);
+      const errorMsg = err.response?.data?.error || err.message || 'Excel export failed';
+      setError(`Excel export failed: ${errorMsg}`);
     } finally {
       setExportingType('');
     }
@@ -133,10 +155,15 @@ function AdminHome() {
     setExportingType('google-sheets');
     try {
       const res = await exportGoogleSheets({ department: filterDept });
+      if (!res || !res.data) {
+        throw new Error('Empty response from server');
+      }
       downloadBlob(res.data, 'attendance_google_sheets.csv');
       setSuccess('Google Sheets CSV downloaded successfully');
-    } catch {
-      setError('Google Sheets export failed');
+    } catch (err) {
+      console.error('Google Sheets export error:', err);
+      const errorMsg = err.response?.data?.error || err.message || 'Google Sheets export failed';
+      setError(`Google Sheets export failed: ${errorMsg}`);
     } finally {
       setExportingType('');
     }
@@ -544,6 +571,41 @@ function AdminHome() {
           <p className="text-sm text-muted mt-8">
             Tip: In Google Sheets, use File → Import and select the downloaded CSV file.
           </p>
+
+          <hr style={{ margin: '24px 0' }} />
+          
+          <h4 style={{ marginBottom: 16, marginTop: 24 }}>Attendance Records</h4>
+          <div className="table-container">
+            {loading ? (
+              <div className="text-center text-muted" style={{ padding: 20 }}>Loading attendance data...</div>
+            ) : attendanceData.length === 0 ? (
+              <div className="text-center text-muted" style={{ padding: 20 }}>No attendance records found</div>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr><th>Date/Time</th><th>Student</th><th>Teacher</th><th>Subject</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  {attendanceData.slice(0, 20).map((record, idx) => (
+                    <tr key={idx}>
+                      <td>{new Date(record.scannedAt || record.createdAt).toLocaleString()}</td>
+                      <td>{record.studentId?.enrollmentNo || 'N/A'}</td>
+                      <td>{record.teacherId?.teacherId || 'N/A'}</td>
+                      <td>{record.subjectId?.subjectCode || 'N/A'}</td>
+                      <td>
+                        <span className={`badge badge-${record.attendanceStatus === 'present' ? 'success' : record.attendanceStatus === 'late' ? 'warning' : 'danger'}`}>
+                          {record.attendanceStatus?.toUpperCase() || 'UNKNOWN'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          {attendanceData.length > 20 && (
+            <p className="text-sm text-muted mt-8">Showing 20 most recent records. Export for complete data.</p>
+          )}
         </div>
       )}
 
