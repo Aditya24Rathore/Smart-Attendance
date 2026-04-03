@@ -102,7 +102,7 @@
 
 ### 1. Authentication System
 - ✅ OTP-based login for Students & Teachers
-- ✅ Credential-based login for Admin/HOD
+- ✅ Credential-based login for Admin
 - ✅ JWT token generation & validation
 - ✅ Role-based access control (RBAC)
 - ✅ Password hashing with bcryptjs

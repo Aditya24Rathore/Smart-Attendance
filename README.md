@@ -9,7 +9,7 @@ This system implements an automated attendance marking system with:
 - **OTP Authentication** - Secure login via SMS/Email OTP
 - **Teacher QR Scanning** - Teachers initiate sessions and scan student QR codes with camera
 - **Real-time Attendance** - Attendance marked immediately when valid QR is scanned
-- **Role-Based Access** - Student, Teacher, Admin/HOD roles with different permissions
+- **Role-Based Access** - Student, Teacher, Admin roles with different permissions
 - **Analytics & Reports** - Attendance tracking and trend analysis
 - **MongoDB Database** - Scalable document-oriented database
 
@@ -20,7 +20,6 @@ This system implements an automated attendance marking system with:
 - **MongoDB** - NoSQL database
 - **Firebase Admin SDK** - OTP authentication (optional)
 - **JWT** - Token-based authentication
-- **QRCode** - QR code generation for students
 - **Mongoose** - MongoDB ODM
 
 ### Frontend
@@ -99,7 +98,7 @@ Smart Attendance/
 - 📊 Class attendance analysis
 - ⚡ Mark attendance in real-time on scan
 
-### Admin/HOD Features
+### Admin Features
 - 👨‍💼 Manage users (students, teachers)
 - ✅ Verify teacher accounts
 - 📊 Generate attendance reports
@@ -258,11 +257,6 @@ REACT_APP_API_URL=http://localhost:5000/api
 - userId, phoneNumber, email, otpCode, otpHash
 - purpose, isUsed, attempts, expiryTime
 
-### QRCode
-- teacherId, classId, qrHash, qrData, qrImage
-- encryptedData, isActive, generatedAt, expiresAt
-- usageCount, lastScannedAt
-
 ## Troubleshooting
 
 ### Connection Issues
@@ -289,30 +283,28 @@ REACT_APP_API_URL=http://localhost:5000/api
 - Backend runs on port 5000 by default
 - Frontend runs on port 3000 by default
 
-## Deployment (Vercel + Render)
+## Deployment (Render)
 
-### Frontend on Vercel
-1. Import repository in Vercel.
-2. Set **Root Directory** to `frontend`.
-3. Build settings:
-   - Build Command: `npm run build`
-   - Output Directory: `build`
-4. Add environment variable:
-   - `REACT_APP_API_URL=https://<your-render-service>.onrender.com/api`
-5. Deploy.
-
-`frontend/vercel.json` is included for SPA route rewrites.
+### Frontend on Render
+1. In Render, create a Static Site service.
+2. Connect your repository.
+3. Set **Root Directory** to `frontend`.
+4. Build Command: `npm run build`
+5. Publish Directory: `build`
+6. Add environment variable (after deployment to get URL):
+   - `REACT_APP_API_URL=https://<your-backend-service>.onrender.com/api`
+7. Redeploy frontend to apply the API URL.
 
 ### Backend on Render
-1. In Render, create service using `render.yaml` from repository root.
+1. In Render, create a Web Service using `render.yaml` from repository root.
 2. Set required secret env vars in Render dashboard:
    - `MONGODB_URI`
    - `JWT_SECRET`
-   - `CORS_ORIGIN` (your Vercel URL, comma-separated if multiple)
+   - `CORS_ORIGIN` (your Render frontend URL, comma-separated if multiple)
    - `ADMIN_PASSWORD`
 3. Keep `NODE_ENV=production`.
 4. Deploy and verify health check:
-   - `https://<your-render-service>.onrender.com/api/health`
+   - `https://<your-backend-service>.onrender.com/api/health`
 
 ### Database on Supabase?
 Current backend uses **MongoDB (Mongoose)**, while Supabase is **PostgreSQL-first**.

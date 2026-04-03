@@ -5,14 +5,14 @@ This document describes the MongoDB database schema for the Smart Attendance Sys
 ## Collections Overview
 
 ### 1. Users Collection
-**Purpose:** Store all user accounts (Students, Teachers, Admins, HODs)
+**Purpose:** Store all user accounts (Students, Teachers, Admins)
 
 ```javascript
 {
   _id: ObjectId,
   username: String (unique, index),
   passwordHash: String,
-  role: String (enum: ['student', 'teacher', 'admin', 'hod']),
+  role: String (enum: ['student', 'teacher', 'admin']),
   fullName: String,
   email: String (unique, sparse),
   phone: String,
@@ -177,7 +177,7 @@ This document describes the MongoDB database schema for the Smart Attendance Sys
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                          USERS                              │
-│ (student, teacher, admin, hod)                              │
+│ (student, teacher, admin)                                  │
 └─────────────────────────────────────────────────────────────┘
         ↓ (userId)              ↓ (userId)            ↓ (userId)
      ┌──────────┐           ┌──────────┐        ┌──────────┐
@@ -267,7 +267,6 @@ db.attendance.aggregate([
 - Student.enrollmentNo - Must be unique
 - Teacher.teacherId - Must be unique
 - Subject.subjectCode - Must be unique
-- QRCode.qrHash - Must be unique
 
 ### Required Fields:
 - User: username, passwordHash, role
@@ -275,7 +274,6 @@ db.attendance.aggregate([
 - Teacher: userId, teacherId, department, branch
 - Attendance: studentId, teacherId, qrCodeHash, qrGeneratedAt
 - OTP: phoneNumber/email, otpHash, expiryTime
-- QRCode: teacherId, qrHash, qrData, qrImage
 
 ## Data Validation
 

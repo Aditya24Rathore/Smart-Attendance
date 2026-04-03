@@ -154,7 +154,6 @@ backend/
 
 ### New Models
 - **OTP** - Dedicated OTP storage with TTL
-- **QRCode** - Dedicated QR code records with encryption
 
 ## Key Differences in Implementation
 

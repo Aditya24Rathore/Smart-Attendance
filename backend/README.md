@@ -91,7 +91,7 @@ npm start
 
 - **JWT Token-based authentication**
 - **OTP verification** for students and teachers
-- **Role-based access control** (Student, Teacher, Admin/HOD)
+- **Role-based access control** (Student, Teacher, Admin)
 - **Encrypted QR codes** using AES-256
 - **Rate limiting** to prevent brute force attacks
 - **CORS** configured for frontend integration

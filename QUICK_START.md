@@ -286,8 +286,8 @@ After getting it running:
    - Customize UI colors/branding
 
 3. **Deploy**
-   - Deploy backend to Heroku/Railway/Render
-   - Deploy frontend to Vercel/Netlify
+   - Deploy backend to Render
+   - Deploy frontend to Render
    - Configure production `.env`
 
 4. **Test Thoroughly**
