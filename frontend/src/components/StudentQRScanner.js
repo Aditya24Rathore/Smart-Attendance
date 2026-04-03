@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeScanner } from 'html5-qrcode';
 import { scanStudentQR } from '../services/api';
 
 function StudentQRScanner({ onScanSuccess, sessionData }) {
@@ -7,14 +7,15 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
   const [error, setError] = useState('');
   const [scanResult, setScanResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const scannerRef = useRef(null);
   const qrInstanceRef = useRef(null);
+  const isProcessingRef = useRef(false);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (qrInstanceRef.current) {
         qrInstanceRef.current.stop().catch(() => {});
+        qrInstanceRef.current = null;
       }
     };
   }, []);
@@ -23,27 +24,20 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
     setScanning(true);
     setError('');
     setScanResult(null);
+    isProcessingRef.current = false;
 
     try {
+      // Initialize scanner if not already done
+      if (!qrInstanceRef.current) {
+        qrInstanceRef.current = new Html5Qrcode('qr-scanner');
+      }
+
       // Get available cameras
       const devices = await Html5Qrcode.getCameras();
       if (!devices || devices.length === 0) {
         setError('❌ No camera found. Please ensure a camera is connected and permissions are granted.');
         setScanning(false);
         return;
-      }
-
-      // Initialize scanner if not already done
-      if (!qrInstanceRef.current) {
-        qrInstanceRef.current = new Html5Qrcode('qr-scanner', {
-          formatsToSupport: [
-            Html5Qrcode.SupportedFormats.QR_CODE,
-          ],
-          experimentalFeatures: {
-            useBarkoderIfSupported: true,
-          },
-          showTorchButtonIfSupported: true,
-        });
       }
 
       // Start scanning with the first available camera
@@ -54,42 +48,48 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
         {
           fps: 10,
           qrbox: { width: 280, height: 280 },
-          aspectRatio: 1.0,
         },
         async (decodedText) => {
-          // QR code scanned
-          if (!isLoading) {
-            try {
-              setIsLoading(true);
-              setScanResult(null);
+          // Prevent processing multiple scans simultaneously
+          if (isProcessingRef.current) return;
+          
+          isProcessingRef.current = true;
+          try {
+            setIsLoading(true);
+            setScanResult(null);
 
-              // Send the scanned QR data to backend
-              const response = await scanStudentQR(decodedText);
+            // Send the scanned QR data to backend
+            const response = await scanStudentQR(decodedText);
 
-              if (response.data?.success) {
-                setScanResult({
-                  type: 'success',
-                  message: response.data?.message || '✅ Attendance Marked',
-                  student: response.data?.student,
-                });
+            if (response.data?.success) {
+              setScanResult({
+                type: 'success',
+                message: response.data?.message || '✅ Attendance Marked',
+                student: response.data?.student,
+              });
 
-                if (onScanSuccess) {
-                  onScanSuccess(response.data);
-                }
-
-                // Stop scanning after successful scan
-                await stopScanning();
+              if (onScanSuccess) {
+                onScanSuccess(response.data);
               }
-            } catch (err) {
-              const errorMsg = err.response?.data?.error || 'Failed to mark attendance';
+
+              // Stop scanning after successful scan
+              await stopScanning();
+            } else {
               setScanResult({
                 type: 'error',
-                message: errorMsg,
+                message: response.data?.error || 'Failed to mark attendance',
               });
-              // Don't stop scanning on error, allow retrying
-            } finally {
-              setIsLoading(false);
             }
+          } catch (err) {
+            const errorMsg = err.response?.data?.error || err.message || 'Failed to mark attendance';
+            setScanResult({
+              type: 'error',
+              message: errorMsg,
+            });
+            // Don't stop scanning on error, allow retrying
+          } finally {
+            setIsLoading(false);
+            isProcessingRef.current = false;
           }
         },
         (error) => {
@@ -102,26 +102,32 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
     } catch (err) {
       const errorMsg = err.message || 'Failed to start camera';
       
+      console.error('Scanner error details:', {
+        name: err.name,
+        message: err.message,
+        fullError: err,
+      });
+
       // Check for specific permission errors
       if (err.name === 'NotAllowedError') {
         setError('❌ Camera permission denied. Please allow camera access in your browser settings.');
       } else if (err.name === 'NotFoundError') {
         setError('❌ No camera found on this device.');
-      } else if (err.message?.includes('permission')) {
+      } else if (err.message?.includes('permission') || err.message?.includes('Permission')) {
         setError('❌ Camera permission required. Please check your browser settings.');
       } else {
         setError(`❌ ${errorMsg}`);
       }
       
       setScanning(false);
-      console.error('Scanner error:', err);
     }
   };
 
   const stopScanning = async () => {
     try {
-      if (qrInstanceRef.current && qrInstanceRef.current.isScanning) {
+      if (qrInstanceRef.current) {
         await qrInstanceRef.current.stop();
+        qrInstanceRef.current = null;
       }
     } catch (err) {
       console.error('Error stopping scanner:', err);
