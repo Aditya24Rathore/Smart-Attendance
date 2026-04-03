@@ -173,33 +173,45 @@ router.post('/scan-student-qr', verifyToken, requireRole('teacher'), async (req,
   try {
     const { qrData } = req.body;
 
+    console.log('📨 Received QR Scan Request');
+    console.log('QR Data:', qrData);
+
     if (!qrData) {
+      console.error('❌ No QR data provided');
       return res.status(400).json({ error: 'QR data is required' });
     }
 
     const teacher = await Teacher.findOne({ userId: req.userId });
     if (!teacher) {
+      console.error('❌ Teacher profile not found for user:', req.userId);
       return res.status(404).json({ error: 'Teacher profile not found' });
     }
 
     // Decode student QR data
     let decodedData;
     try {
+      console.log('🔍 Attempting to decode QR data...');
       decodedData = QRService.decodeStudentQRData(qrData);
+      console.log('✅ Decoded data:', decodedData);
     } catch (error) {
-      return res.status(400).json({ error: 'Invalid QR code format' });
+      console.error('❌ QR decode error:', error.message);
+      return res.status(400).json({ error: 'Invalid QR code format: ' + error.message });
     }
 
     // Validate QR data contains required fields
     if (!decodedData.enrollmentNo || !decodedData.studentId) {
-      return res.status(400).json({ error: 'Invalid student QR code data' });
+      console.error('❌ Invalid QR data - missing required fields:', decodedData);
+      return res.status(400).json({ error: 'Invalid student QR code data. Missing enrollmentNo or studentId' });
     }
 
     // Find student
     const student = await Student.findById(decodedData.studentId).populate('userId');
     if (!student) {
+      console.error('❌ Student not found with ID:', decodedData.studentId);
       return res.status(404).json({ error: 'Student not found' });
     }
+
+    console.log('✅ Student found:', student.enrollmentNo, student.userId?.fullName);
 
     // Check if attendance already marked in the last 2 minutes (prevent duplicate scans)
     const existingAttendance = await Attendance.findOne({
@@ -211,6 +223,7 @@ router.post('/scan-student-qr', verifyToken, requireRole('teacher'), async (req,
     });
 
     if (existingAttendance) {
+      console.log('⚠️ Duplicate scan - attendance already marked in last 2 minutes');
       return res.status(409).json({
         error: 'Attendance already marked for this student. Please wait before rescanning.',
         student: {
@@ -238,6 +251,8 @@ router.post('/scan-student-qr', verifyToken, requireRole('teacher'), async (req,
 
     const studentName = student.userId?.fullName || student.enrollmentNo;
 
+    console.log('✅ Attendance marked successfully for:', studentName);
+
     res.json({
       success: true,
       message: `✅ ${studentName} - Marked Present`,
@@ -250,7 +265,7 @@ router.post('/scan-student-qr', verifyToken, requireRole('teacher'), async (req,
       },
     });
   } catch (error) {
-    console.error('Error scanning student QR:', error);
+    console.error('❌ Error scanning student QR:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -261,36 +276,28 @@ router.post('/scan-student-qr', verifyToken, requireRole('teacher'), async (req,
  */
 router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
+    console.log('📋 Fetching session attendance for sessionId:', req.params.sessionId);
+
     const teacher = await Teacher.findOne({ userId: req.userId });
     if (!teacher) {
+      console.error('❌ Teacher profile not found');
       return res.status(404).json({ error: 'Teacher profile not found' });
     }
 
     const { subjectId } = req.query;
+    console.log('Subject filter:', subjectId);
 
-    // Build student filter
-    let studentFilter = {};
-    
-    if (subjectId) {
-      // If subjectId provided, fetch only students for that subject
-      const subject = await Subject.findById(subjectId);
-      if (!subject) {
-        // If subject not found, still proceed with all students
-        console.warn('Subject not found, fetching all students');
-      } else {
-        // Try to filter by subject if subject has student associations
-        // For now, get all students - subject filtering can be improved with proper schema
-      }
-    }
-
-    // Get all students (can be improved with subject-based filtering)
-    const allStudents = await Student.find(studentFilter).populate('userId');
+    // Get all students
+    const allStudents = await Student.find({}).populate('userId');
+    console.log('Total students found:', allStudents.length);
     
     // Get today's attendance marked by this teacher
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+
+    console.log('Checking attendance between:', today, 'and', tomorrow);
 
     const todayRecords = await Attendance.find({
       teacherId: teacher._id,
@@ -299,6 +306,11 @@ router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher')
         $lt: tomorrow,
       },
     }).populate('studentId');
+
+    console.log('Attendance records found today:', todayRecords.length);
+    todayRecords.forEach(record => {
+      console.log('  -', record.studentId?.enrollmentNo, record.attendanceStatus);
+    });
 
     const presentStudentIds = new Set(todayRecords.map(r => String(r.studentId?._id)));
 
@@ -314,6 +326,8 @@ router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher')
 
     const presentCount = studentList.filter(s => s.status === 'present').length;
 
+    console.log('✅ Attendance list prepared:', presentCount, 'present out of', studentList.length);
+
     res.json({
       success: true,
       students: studentList,
@@ -321,7 +335,7 @@ router.get('/session-attendance/:sessionId', verifyToken, requireRole('teacher')
       total_students: studentList.length,
     });
   } catch (error) {
-    console.error('Error fetching session attendance:', error);
+    console.error('❌ Error fetching session attendance:', error);
     res.status(500).json({ error: error.message });
   }
 });

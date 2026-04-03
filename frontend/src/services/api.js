@@ -128,8 +128,10 @@ export const getAttendanceHistory = (page = 1, limit = 20, month, year) =>
     params: { page, limit, month, year },
   });
 
-export const getStudentQRCode = () =>
-  api.get('/student/generate-qr');
+export const getStudentQRCode = (forceRegenerate = false) => {
+  const params = forceRegenerate ? { force: 'true' } : {};
+  return api.get('/student/generate-qr', { params });
+};
 
 // ============= TEACHER ROUTES =============
 

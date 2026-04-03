@@ -89,7 +89,8 @@ router.get('/attendance-history', verifyToken, requireRole('student'), async (re
 
 /**
  * GET /api/student/generate-qr
- * Generate and get student's personal QR code
+ * Generate and get student's personal QR code (cached on first request)
+ * Query param: ?force=true to regenerate
  */
 router.get('/generate-qr', verifyToken, requireRole('student'), async (req, res) => {
   try {
@@ -99,6 +100,28 @@ router.get('/generate-qr', verifyToken, requireRole('student'), async (req, res)
       return res.status(404).json({ error: 'Student profile not found' });
     }
 
+    const forceRegenerate = req.query.force === 'true';
+    
+    // Check if student already has a cached QR code and force is not true
+    if (student.qrContent && student.qrImage && !forceRegenerate) {
+      console.log(`📱 Using cached QR code for student: ${student.enrollmentNo}`);
+      return res.json({
+        success: true,
+        message: 'Student QR code retrieved (cached)',
+        cached: true,
+        qrCode: {
+          qrHash: student.enrollmentNo,
+          qrContent: student.qrContent,
+          qrImage: student.qrImage,
+          enrollmentNo: student.enrollmentNo,
+          fullName: user?.fullName || student.enrollmentNo,
+          generatedAt: student.qrGeneratedAt,
+        },
+      });
+    }
+
+    console.log(`🔄 Generating new QR code for student: ${student.enrollmentNo}`);
+    
     // Generate student QR code
     const studentData = {
       ...student.toObject(),
@@ -107,14 +130,23 @@ router.get('/generate-qr', verifyToken, requireRole('student'), async (req, res)
 
     const qrCode = await QRService.generateStudentQRCode(studentData);
 
+    // Save QR code to database for caching
+    student.qrContent = qrCode.qrContent;
+    student.qrImage = qrCode.qrImage;
+    student.qrGeneratedAt = new Date();
+    await student.save();
+
     res.json({
       success: true,
-      message: 'Student QR code generated',
+      message: 'Student QR code generated and cached',
+      cached: false,
       qrCode: {
         qrHash: qrCode.qrHash,
+        qrContent: qrCode.qrContent,
         qrImage: qrCode.qrImage,
         enrollmentNo: student.enrollmentNo,
         fullName: user?.fullName || student.enrollmentNo,
+        generatedAt: qrCode.generatedAt,
       },
     });
   } catch (error) {

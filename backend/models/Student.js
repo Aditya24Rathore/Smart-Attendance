@@ -62,6 +62,19 @@ const studentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  qrContent: {
+    type: String,
+    default: null,
+    index: true,
+  },
+  qrImage: {
+    type: String,
+    default: null,
+  },
+  qrGeneratedAt: {
+    type: Date,
+    default: null,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Student', studentSchema);

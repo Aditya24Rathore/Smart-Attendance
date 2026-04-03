@@ -6,21 +6,50 @@ function StudentQRDisplay({ studentData }) {
   const [qrCode, setQrCode] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cached, setCached] = useState(false);
+  const [generatedAt, setGeneratedAt] = useState(null);
 
   useEffect(() => {
     loadStudentQR();
   }, []);
 
-  const loadStudentQR = async () => {
+  const loadStudentQR = async (forceRegenerate = false) => {
     setLoading(true);
     setError('');
     try {
-      const res = await getStudentQRCode();
+      const url = forceRegenerate ? '/api/student/generate-qr?force=true' : '/api/student/generate-qr';
+      const res = await getStudentQRCode(forceRegenerate);
       setQrCode(res.data?.qrCode);
+      setCached(res.data?.cached || false);
+      setGeneratedAt(res.data?.qrCode?.generatedAt);
+      
+      if (forceRegenerate) {
+        console.log('✅ QR code regenerated successfully');
+      } else if (res.data?.cached) {
+        console.log('📦 Using cached QR code from database');
+      } else {
+        console.log('🆕 Generated new QR code and cached it');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load your QR code');
+      console.error('❌ Error loading QR code:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegenerateClick = () => {
+    console.log('🔄 User clicked regenerate button - forcing new QR code generation');
+    loadStudentQR(true);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    } catch {
+      return '';
     }
   };
 
@@ -44,7 +73,7 @@ function StudentQRDisplay({ studentData }) {
           <h3 className="card-title">📱 Your Attendance QR Code</h3>
         </div>
         <div className="alert alert-error">{error}</div>
-        <button className="btn btn-primary btn-block mt-3" onClick={loadStudentQR}>
+        <button className="btn btn-primary btn-block mt-3" onClick={() => loadStudentQR()}>
           Try Again
         </button>
       </div>
@@ -62,6 +91,18 @@ function StudentQRDisplay({ studentData }) {
           Show this QR code to your teacher to mark attendance
         </p>
 
+        {cached && (
+          <div className="alert alert-info" style={{ marginBottom: '15px' }}>
+            ✅ <strong>Cached QR Code:</strong> This QR code was generated on {formatDate(generatedAt)} and reused
+          </div>
+        )}
+
+        {!cached && (
+          <div className="alert alert-success" style={{ marginBottom: '15px' }}>
+            🆕 <strong>Fresh QR Code:</strong> Generated on {formatDate(generatedAt)}. It will be cached for future use.
+          </div>
+        )}
+
         {qrCode && (
           <div style={{
             display: 'inline-block',
@@ -71,7 +112,7 @@ function StudentQRDisplay({ studentData }) {
             border: '2px solid #e0e0e0'
           }}>
             <QRCodeSVG 
-              value={qrCode.qrImage || qrCode.qrContent || ''} 
+              value={qrCode.qrContent || ''} 
               size={250}
               level="H"
               includeMargin={true}
@@ -88,9 +129,15 @@ function StudentQRDisplay({ studentData }) {
           </p>
         </div>
 
-        <button className="btn btn-secondary btn-block mt-4" onClick={loadStudentQR}>
-          🔄 Regenerate QR Code
+        <button 
+          className="btn btn-secondary btn-block mt-4" 
+          onClick={handleRegenerateClick}
+        >
+          🔄 Generate New QR Code (Force)
         </button>
+        <p className="text-xs text-muted mt-2">
+          Normally, the same QR code is reused. Click above only if you need a fresh code.
+        </p>
       </div>
 
       <div className="alert alert-info" style={{ margin: '0 20px 20px' }}>

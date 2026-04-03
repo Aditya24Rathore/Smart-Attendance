@@ -91,22 +91,39 @@ function TeacherHome() {
 
   const loadAttendance = async (sessionId, subId = null) => {
     try {
-      const res = await getSessionAttendance(sessionId, subId || selectedSubject);
+      const subject = subId || selectedSubject;
+      console.log('📥 Loading attendance for session:', sessionId, 'subject:', subject);
+      
+      const res = await getSessionAttendance(sessionId, subject);
+      
+      console.log('✅ Attendance response:', res.data);
+      console.log('Students:', res.data.students);
+      console.log('Present count:', res.data.present_count, 'out of', res.data.total_students);
+      
       setAttendance(res.data);
     } catch (err) {
-      console.error('Failed to load attendance:', err);
+      console.error('❌ Failed to load attendance:', err);
     }
   };
 
   const handleScanSuccess = useCallback((result) => {
+    console.log('🎯 Scan success callback triggered:', result);
+    
     if (result?.success && activeSession) {
+      console.log('✅ Marking scan as successful and refreshing attendance list');
+      
       setScanResult({
         type: 'success',
         message: result.message || '✅ Attendance Marked',
         student: result.student,
       });
+      
+      console.log('📥 Reloading attendance after successful scan');
       loadAttendance(activeSession.id, selectedSubject);
+      
       setTimeout(() => setScanResult(null), 2000);
+    } else {
+      console.warn('⚠️ Scan result missing success flag or no active session', { result, activeSession });
     }
   }, [activeSession, selectedSubject]);
 

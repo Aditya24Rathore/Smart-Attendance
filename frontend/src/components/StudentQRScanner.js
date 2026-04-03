@@ -114,10 +114,17 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
             setIsLoading(true);
             setScanResult(null);
 
+            console.log('🔍 QR Code Scanned. Raw data:', decodedText);
+
             // Send the scanned QR data to backend
             const response = await scanStudentQR(decodedText);
 
+            console.log('📤 API Response:', response);
+            console.log('📤 Response Status:', response.status);
+            console.log('📤 Response Data:', response.data);
+
             if (response.data?.success) {
+              console.log('✅ Scan successful!', response.data);
               setScanResult({
                 type: 'success',
                 message: response.data?.message || '✅ Attendance Marked',
@@ -131,13 +138,16 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
               // Stop scanning after successful scan
               setTimeout(() => stopScanning(), 1500);
             } else {
+              console.warn('⚠️ Response data missing success flag');
               setScanResult({
                 type: 'error',
                 message: response.data?.error || 'Failed to mark attendance',
               });
             }
           } catch (err) {
-            console.error('Scan processing error:', err);
+            console.error('❌ Scan processing error:', err);
+            console.error('Error config:', err.config);
+            console.error('Error response:', err.response);
 
             // Handle different error scenarios
             let errorMsg = 'Failed to mark attendance';
@@ -151,6 +161,8 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
             } else if (err.message) {
               errorMsg = err.message;
             }
+
+            console.error('Final error message:', errorMsg);
 
             setScanResult({
               type: 'error',
