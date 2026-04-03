@@ -74,7 +74,47 @@ router.get('/subjects', verifyToken, requireRole('teacher'), async (req, res) =>
   }
 });
 
+/**
+ * POST /api/teacher/start-session
+ * Start a new attendance session for a subject
+ */
+router.post('/start-session', verifyToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const { subjectId } = req.body;
 
+    if (!subjectId) {
+      return res.status(400).json({ error: 'Subject ID is required' });
+    }
+
+    const teacher = await Teacher.findOne({ userId: req.userId });
+    if (!teacher) {
+      return res.status(404).json({ error: 'Teacher profile not found' });
+    }
+
+    const subject = await Subject.findById(subjectId);
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    // Create a session ID based on timestamp
+    const sessionId = `session_${Date.now()}`;
+
+    res.json({
+      success: true,
+      session: {
+        id: sessionId,
+        subjectId: subject._id,
+        subject_code: subject.subjectCode,
+        subject_name: subject.subjectName,
+        is_active: true,
+        started_at: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Error starting session:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 /**
  * GET /api/teacher/attendance-records

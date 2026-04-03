@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StudentQRScanner from '../components/StudentQRScanner';
 import { useAuth } from '../App';
-import { startSession, endSession, getSessionAttendance } from '../services/api';
+import { startSession, endSession, getSessionAttendance, getTeacherSubjects } from '../services/api';
 
 function TeacherDashboard() {
   return (
@@ -27,12 +27,40 @@ function TeacherHome() {
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  // Fetch subjects on component mount
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setLoadingSubjects(true);
+      try {
+        const res = await getTeacherSubjects();
+        const fetchedSubjects = res.data?.subjects || [];
+        setSubjects(fetchedSubjects);
+        if (fetchedSubjects.length > 0) {
+          setSelectedSubject(fetchedSubjects[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load subjects:', err);
+        setError('Failed to load subjects');
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   const handleStartSession = async () => {
+    if (!selectedSubject) {
+      setError('Please select a subject first');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      const res = await startSession();
+      const res = await startSession(selectedSubject);
       const newSession = res.data.session;
       setActiveSession(newSession);
       await loadAttendance(newSession.id);
@@ -99,17 +127,57 @@ function TeacherHome() {
             <h3 className="card-title">📊 Start Attendance Session</h3>
           </div>
           {error && <div className="alert alert-error">{error}</div>}
-          <div style={{ padding: '20px', textAlign: 'center' }}>
+          <div style={{ padding: '20px' }}>
             <p className="text-muted mb-4">
-              Start a session to begin scanning student QR codes
+              Select a subject and start a session to begin scanning student QR codes
             </p>
-            <button
-              className="btn btn-success btn-lg"
-              onClick={handleStartSession}
-              disabled={loading}
-            >
-              {loading ? 'Starting...' : '▶️ Start Session'}
-            </button>
+            
+            {loadingSubjects ? (
+              <div style={{ textAlign: 'center', margin: '20px 0' }}>
+                <p>Loading subjects...</p>
+              </div>
+            ) : subjects.length === 0 ? (
+              <div className="alert alert-warning">
+                No subjects assigned to you. Please contact an administrator.
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: '20px' }}>
+                  <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    📚 Select Subject:
+                  </label>
+                  <select
+                    className="form-control"
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      fontSize: '14px',
+                      width: '100%',
+                    }}
+                  >
+                    <option value="">-- Select Subject --</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.code} - {subject.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ textAlign: 'center' }}>
+                  <button
+                    className="btn btn-success btn-lg"
+                    onClick={handleStartSession}
+                    disabled={loading || !selectedSubject}
+                  >
+                    {loading ? 'Starting...' : '▶️ Start Session'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : (
@@ -117,7 +185,12 @@ function TeacherHome() {
           <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 style={{ fontWeight: 700, margin: '0 0 8px 0' }}>🔴 Session Active</h3>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>
+              {activeSession && (
+                <p style={{ margin: '4px 0', opacity: 0.9, fontSize: '0.9rem' }}>
+                  <strong>Subject:</strong> {activeSession.subject_code} - {activeSession.subject_name}
+                </p>
+              )}
+              <p style={{ margin: '4px 0', opacity: 0.9, fontSize: '0.9rem' }}>
                 {attendance.present_count} / {attendance.total_students} students marked
               </p>
             </div>

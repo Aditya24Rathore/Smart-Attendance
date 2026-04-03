@@ -341,19 +341,22 @@ export const getTeacherSessions = () =>
   })).catch(() => resolved({ sessions: [] }));
 
 export const startSession = (subjectId) => {
-  // Create a simple session ID based on timestamp
-  // No QR generation needed - students show their QR codes instead
-  const sessionId = `session_${Date.now()}`;
-  return resolved({
-    data: {
-      session: {
-        id: sessionId,
-        subject_code: 'Class',
-        subject_name: 'Attendance Session',
-        is_active: true,
-        started_at: new Date().toISOString(),
+  if (!subjectId) {
+    return Promise.reject(new Error('Subject ID is required'));
+  }
+  return api.post('/teacher/start-session', { subjectId }).then((res) => {
+    return {
+      ...res,
+      data: {
+        session: res.data.session || {
+          id: res.data.session?.id,
+          subject_code: res.data.session?.subject_code,
+          subject_name: res.data.session?.subject_name,
+          is_active: true,
+          started_at: new Date().toISOString(),
+        },
       },
-    },
+    };
   });
 };
 
