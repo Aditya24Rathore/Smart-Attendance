@@ -121,7 +121,7 @@ npm start
 - [x] Student dashboard
 - [x] Teacher dashboard
 - [x] Admin dashboard
-- [x] QR code generation (30-second refresh)
+- [x] QR code generation (student personal QR)
 - [x] Attendance marking
 - [x] Attendance history
 - [x] Reports generation

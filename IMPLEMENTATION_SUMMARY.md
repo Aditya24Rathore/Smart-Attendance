@@ -24,14 +24,13 @@
 9. ✅ `backend/models/Attendance.js` - Attendance records schema
 10. ✅ `backend/models/Subject.js` - Subject/Course schema
 11. ✅ `backend/models/OTP.js` - OTP verification schema
-12. ✅ `backend/models/QRCode.js` - QR code records schema
-13. ✅ `backend/models/index.js` - model exports
+12. ✅ `backend/models/index.js` - model exports
 
 ### Middleware
 14. ✅ `backend/middleware/auth.js` - JWT authentication & role-based access control
 
 ### Services (Business Logic)
-15. ✅ `backend/services/QRService.js` - Dynamic QR code generation & verification
+15. ✅ `backend/services/QRService.js` - Student QR code generation & verification
 16. ✅ `backend/services/OTPService.js` - OTP management & validation
 17. ✅ `backend/services/EmailService.js` - Email delivery for OTPs
 
@@ -109,11 +108,11 @@
 - ✅ Password hashing with bcryptjs
 
 ### 2. QR Code System
-- ✅ Dynamic QR generation (refreshes every 30 seconds)
-- ✅ AES-256 encryption for QR data
-- ✅ Non-shareable QR codes
+- ✅ Static student QR code generation (enrollment-based)
+- ✅ Encryption support for QR data
+- ✅ Non-transferable QR codes (enrollment-tied)
 - ✅ QR code verification & validation
-- ✅ Usage tracking & analytics
+- ✅ Teacher session-based attendance marking
 
 ### 3. OTP Service
 - ✅ 6-digit OTP generation

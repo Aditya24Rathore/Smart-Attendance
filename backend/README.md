@@ -61,13 +61,13 @@ npm start
 
 ### Student Routes (`/api/student`)
 - `GET /dashboard` - Student dashboard
-- `POST /scan-qr` - Scan QR code for attendance
+- `GET /qr-code` - Get student's personal QR code
 - `GET /attendance-history` - View attendance records
 
 ### Teacher Routes (`/api/teacher`)
 - `GET /dashboard` - Teacher dashboard
-- `POST /generate-qr` - Generate dynamic QR code
-- `GET /qr-status/:qrHash` - Check QR code status
+- `POST /start-session` - Initiate attendance session
+- `POST /scan-qr` - Scan and verify student QR code
 - `GET /attendance-records` - View attendance records
 
 ### Admin Routes (`/api/admin`)
@@ -80,14 +80,12 @@ npm start
 
 ## QR Code System
 
-- QR codes are generated dynamically and refresh every **30 seconds**
-- Each QR code is encrypted and contains:
-  - Teacher ID
-  - Class/Session ID
-  - Timestamp
-  - Random unique value
-- QR codes are **non-shareable** - cannot be screenshotted or shared
-- Prevents proxy attendance
+- Each student generates a **static personal QR code** based on their enrollment number
+- QR code contains encrypted student identification data
+- **Teacher Workflow:** Initiate session → Scan student QR codes → Attendance marked in real-time
+- Sessions are identified by timestamp-based IDs
+- Prevents unauthorized attendance marking through proper encryption and validation
+- No expiry on personal QR codes (valid throughout enrollment)
 
 ## Security Features
 

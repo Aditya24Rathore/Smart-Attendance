@@ -30,7 +30,6 @@ This covers credential management, best practices, and what to NEVER do.
 | Document | Purpose | Read Time |
 |----------|---------|-----------|
 | **🔒 [SECURITY.md](./SECURITY.md)** | **Security guidelines & credential management** | **10 min** |
-| [SECURITY_FIX_SUMMARY.md](./SECURITY_FIX_SUMMARY.md) | Summary of security fixes applied | 5 min |
 
 ### Quick References (Start with these)
 | Document | Purpose | Read Time |

@@ -45,12 +45,13 @@ nano .env  # or use your preferred editor
 ```
 MONGODB_URI=mongodb://localhost:27017/smart_attendance
 JWT_SECRET=your_secret_key_minimum_32_characters_for_better_security
-QR_ENCRYPTION_KEY=your_32_character_hex_key_1234567890abcdef
 PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
 OTP_LENGTH=6
 OTP_EXPIRY=10
+ADMIN_EMAIL=admin@smartattendance.com
+ADMIN_PASSWORD=<your_secure_password>
 ```
 
 ### Step 4: Setup MongoDB
@@ -280,7 +281,7 @@ npm start
 
 3. **Update Security**
    - Set strong `ADMIN_PASSWORD` in `.env`
-   - Generate strong JWT_SECRET and QR_ENCRYPTION_KEY
+   - Generate strong `JWT_SECRET`
    - Update CORS_ORIGIN for production
 
 4. **Deploy to Production**

@@ -172,32 +172,6 @@ This document describes the MongoDB database schema for the Smart Attendance Sys
 
 ---
 
-### 7. QRCode Collection
-**Purpose:** Store dynamic QR code records
-
-```javascript
-{
-  _id: ObjectId,
-  teacherId: ObjectId (ref: Teacher, index),
-  classId: ObjectId (ref: Class, sparse),
-  qrHash: String (unique, index),
-  qrData: String (JSON string),
-  qrImage: String (Base64 or URL),
-  encryptedData: String (AES-256 encrypted),
-  isActive: Boolean (default: true),
-  generatedAt: Date (index),
-  expiresAt: Date (index, TTL: 0 - auto-delete),
-  usageCount: Number (default: 0),
-  lastScannedAt: Date,
-  createdAt: Date
-}
-```
-
-**TTL:**
-- Documents auto-delete at expiresAt timestamp
-
----
-
 ## Data Relationships
 
 ```

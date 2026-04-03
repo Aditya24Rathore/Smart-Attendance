@@ -54,7 +54,7 @@ QR_ENCRYPTION_KEY=<generate a 32-character hex key>
 ```bash
 heroku config:set MONGODB_URI=<your_mongodb_connection_string>
 heroku config:set JWT_SECRET=<your_jwt_secret>
-heroku config:set QR_ENCRYPTION_KEY=<your_encryption_key>
+heroku config:set ADMIN_PASSWORD=<your_admin_password>
 ```
 Replace `<...>` with your actual values. Never share these with others.
 

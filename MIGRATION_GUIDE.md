@@ -84,8 +84,7 @@ backend/
 │   ├── Teacher.js
 │   ├── Attendance.js
 │   ├── Subject.js
-│   ├── OTP.js
-│   └── QRCode.js
+│   └── OTP.js
 ├── routes/
 │   ├── auth.js
 │   ├── student.js
@@ -107,15 +106,15 @@ backend/
 ### Student Routes
 | Old Flask Route | New Express Route | Method | Change |
 |-------|-----------|--------|--------|
-| `/api/student/qr-token` | `/api/student/scan-qr` | POST | Renamed |
+| `/api/student/qr-display` | `/api/student/qr-code` | GET | Renamed - Gets personal QR |
 | `/api/student/attendance` | `/api/student/attendance-history` | GET | Renamed |
 | `/api/student/dashboard` | `/api/student/dashboard` | GET | Same |
 
 ### Teacher Routes
 | Old Flask Route | New Express Route | Method | Change |
 |-------|-----------|--------|--------|
-| `/api/teacher/start-session` | `/api/teacher/generate-qr` | POST | Renamed |
-| `/api/teacher/sessions` | `/api/teacher/qr-status/:qrHash` | GET | New |
+| `/api/teacher/start-session` | `/api/teacher/start-session` | POST | Same, initiates session |
+| `/api/teacher/scan-code` | `/api/teacher/scan-qr` | POST | Scans student QR code |
 | `/api/teacher/attendance-records` | `/api/teacher/attendance-records` | GET | Same |
 
 ### Admin Routes
@@ -300,7 +299,7 @@ Response structure remains the same, so minimal frontend changes needed.
 
 ## What Stayed the Same
 
-1. **QR Code Logic** - Same 30-second refresh timing
+1. **QR Code Logic** - Enrollment-based static student QR codes
 2. **OTP Concept** - Same SMS/Email delivery approach
 3. **Role-Based Access** - Same student/teacher/admin roles
 4. **Attendance Tracking** - Same marking and reporting logic

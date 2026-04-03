@@ -23,7 +23,6 @@ Set these on `smart-attendance-backend`:
 
 - `MONGODB_URI` = your MongoDB Atlas URI
 - `JWT_SECRET` = strong random secret (32+ chars)
-- `QR_ENCRYPTION_KEY` = strong 32-char key
 - `ADMIN_PASSWORD` = strong admin password
 - `CORS_ORIGIN` = frontend URL (example: `https://smart-attendance-frontend.onrender.com`)
 

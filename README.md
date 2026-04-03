@@ -5,9 +5,10 @@ A modern QR-code based attendance system for educational institutions using Node
 ## Project Overview
 
 This system implements an automated attendance marking system with:
-- **Dynamic QR Codes** - Generated every 30 seconds, preventing screenshots/sharing
+- **Static Student QR Codes** - Each student has a unique personal QR code based on their enrollment
 - **OTP Authentication** - Secure login via SMS/Email OTP
-- **Real-time QR Scanning** - Students scan QR codes to mark attendance
+- **Teacher QR Scanning** - Teachers initiate sessions and scan student QR codes with camera
+- **Real-time Attendance** - Attendance marked immediately when valid QR is scanned
 - **Role-Based Access** - Student, Teacher, Admin/HOD roles with different permissions
 - **Analytics & Reports** - Attendance tracking and trend analysis
 - **MongoDB Database** - Scalable document-oriented database
@@ -19,7 +20,7 @@ This system implements an automated attendance marking system with:
 - **MongoDB** - NoSQL database
 - **Firebase Admin SDK** - OTP authentication (optional)
 - **JWT** - Token-based authentication
-- **QRCode** - Dynamic QR code generation
+- **QRCode** - QR code generation for students
 - **Mongoose** - MongoDB ODM
 
 ### Frontend
@@ -39,8 +40,7 @@ Smart Attendance/
 │   │   ├── Teacher.js
 │   │   ├── Attendance.js
 │   │   ├── Subject.js
-│   │   ├── OTP.js
-│   │   └── QRCode.js
+│   │   └── OTP.js
 │   ├── routes/              # API route handlers
 │   │   ├── auth.js
 │   │   ├── student.js
@@ -65,8 +65,17 @@ Smart Attendance/
     ├── public/
     ├── src/
     │   ├── components/      # Reusable React components
+    │   │   ├── Navbar.js
+    │   │   ├── StudentQRDisplay.js   # Display student's personal QR
+    │   │   └── StudentQRScanner.js   # Teacher scans student QRs
     │   ├── pages/           # Page components
+    │   │   ├── LoginPage.js
+    │   │   ├── RegisterPage.js
+    │   │   ├── AdminDashboard.js
+    │   │   ├── StudentDashboard.js
+    │   │   └── TeacherDashboard.js
     │   ├── services/        # API service layer
+    │   │   └── api.js
     │   ├── styles/          # CSS styles
     │   ├── App.js
     │   └── index.js
@@ -78,16 +87,17 @@ Smart Attendance/
 
 ### Student Features
 - 📱 OTP-based registration and login
-- 📸 Real-time QR code scanning
+- 📸 Generate personal static QR code (enrollment-based)
 - 📊 View attendance history
 - 📈 Track attendance percentage
 - 🔒 Secure authentication with OTP
 
 ### Teacher Features
-- 📋 Generate dynamic QR codes (30-second refresh)
+- 📋 Initiate attendance sessions (timestamp-based)
+- 📷 Scan student QR codes using camera
 - 👥 View attendance records
 - 📊 Class attendance analysis
-- 🔐 Teacher device acts as scanner only
+- ⚡ Mark attendance in real-time on scan
 
 ### Admin/HOD Features
 - 👨‍💼 Manage users (students, teachers)
@@ -95,6 +105,7 @@ Smart Attendance/
 - 📊 Generate attendance reports
 - 🔍 Filter attendance by department/semester
 - ✏️ Bulk edit attendance records
+- 📈 Export reports (Excel, Google Sheets)
 
 ## Setup Instructions
 
@@ -165,14 +176,17 @@ The frontend will be available at `http://localhost:3000`
 
 ### Student Routes (`/api/student`)
 - `GET /dashboard` - Student dashboard
-- `POST /scan-qr` - Scan QR code for attendance
+- `GET /generate-qr` - Generate personal QR code
 - `GET /attendance-history` - View attendance records
 
 ### Teacher Routes (`/api/teacher`)
 - `GET /dashboard` - Teacher dashboard
-- `POST /generate-qr` - Generate dynamic QR code
-- `GET /qr-status/:qrHash` - Check QR code status
+- `GET /subjects` - Get assigned subjects
+- `POST /start-session` - Start attendance session
+- `POST /scan-student-qr` - Scan student QR code
 - `GET /attendance-records` - View attendance records
+- `GET /session-attendance/:sessionId` - Get session attendance details
+- `POST /mark-attendance-manual` - Mark attendance manually
 
 ### Admin Routes (`/api/admin`)
 - `GET /dashboard` - System statistics
