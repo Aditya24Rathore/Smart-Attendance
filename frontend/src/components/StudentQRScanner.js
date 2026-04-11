@@ -8,6 +8,9 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
   const [scanResult, setScanResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
+  const [switchingCamera, setSwitchingCamera] = useState(false);
   
   const qrInstanceRef = useRef(null);
   const isProcessingRef = useRef(false);
@@ -40,13 +43,13 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
 
     // Wait for DOM to render before initializing
     const initTimer = setTimeout(() => {
-      initializeScanner();
+      initializeScanner(selectedCameraIndex);
     }, 100);
 
     return () => clearTimeout(initTimer);
-  }, [scanning]);
+  }, [scanning, selectedCameraIndex]);
 
-  const initializeScanner = async () => {
+  const initializeScanner = async (cameraIndex = 0) => {
     try {
       setError('');
       setScanResult(null);
@@ -96,8 +99,12 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
         return;
       }
 
-      // Start scanning with the first available camera
-      const cameraId = devices[0].id;
+      // Store available cameras
+      setAvailableCameras(devices);
+
+      // Use selected camera or default to first
+      const selectedIndex = Math.min(cameraIndex, devices.length - 1);
+      const cameraId = devices[selectedIndex].id;
 
       await qrInstanceRef.current.start(
         cameraId,
@@ -211,6 +218,37 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
     setScanning(true);
   };
 
+  const switchCamera = async () => {
+    if (availableCameras.length < 2) return;
+    
+    setSwitchingCamera(true);
+    try {
+      // Stop current scanner
+      if (qrInstanceRef.current) {
+        try {
+          await qrInstanceRef.current.stop();
+          qrInstanceRef.current = null;
+        } catch (e) {
+          console.debug('Error stopping scanner:', e);
+        }
+      }
+
+      // Switch to next camera
+      const nextIndex = (selectedCameraIndex + 1) % availableCameras.length;
+      setSelectedCameraIndex(nextIndex);
+
+      // Restart scanner with the new index
+      setTimeout(() => {
+        initializeScanner(nextIndex);
+        setSwitchingCamera(false);
+      }, 300);
+    } catch (err) {
+      console.error('Error switching camera:', err);
+      setSwitchingCamera(false);
+      setError('Failed to switch camera. Please try again.');
+    }
+  };
+
   const stopScanning = () => {
     setScanning(false);
   };
@@ -268,14 +306,32 @@ function StudentQRScanner({ onScanSuccess, sessionData }) {
             />
           </div>
           <div style={{ textAlign: 'center', padding: '20px' }}>
+            <div style={{ marginBottom: '15px', fontSize: '13px', color: '#666' }}>
+              📷 Camera: {selectedCameraIndex + 1} / {availableCameras.length}
+              {availableCameras.length > 1 && (
+                <p style={{ marginTop: '5px', marginBottom: 0 }}>
+                  (Front/Back)
+                </p>
+              )}
+            </div>
             <button
               className="btn btn-danger"
               onClick={stopScanning}
-              disabled={isLoading}
-              style={{ minWidth: '150px' }}
+              disabled={isLoading || switchingCamera}
+              style={{ minWidth: '120px', marginRight: '10px' }}
             >
-              ⛔ Stop Scanning
+              ⛔ Stop
             </button>
+            {availableCameras.length > 1 && (
+              <button
+                className="btn btn-primary"
+                onClick={switchCamera}
+                disabled={isLoading || switchingCamera}
+                style={{ minWidth: '120px' }}
+              >
+                {switchingCamera ? '🔄 Switching...' : '📷 Switch Camera'}
+              </button>
+            )}
           </div>
         </>
       )}
